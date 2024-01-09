@@ -286,8 +286,8 @@ def calculTime(id,idServ):
 def log(time,user,action,place):
     print(f"{time} - {user} - {action} in {place}")
     
-    with open('logs.csv', 'a', newline='') as file:
-        writer = csv.writer(file, delimiter=';')
+    with open('logs.csv', 'a', newline='', encoding='utf-8') as file:
+        writer = csv.writer(file, delimiter=',')
         writer.writerow([time, user,action,place])
 
 def NewChamp(nouveau_champ,valeur_par_defaut):
