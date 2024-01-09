@@ -1,3 +1,12 @@
+<?php
+$userAgent = $_SERVER['HTTP_USER_AGENT'];
+
+if (preg_match('/(android|iphone|ipad)/i', $userAgent)) {
+    header('Location: mobile.php');
+    exit();
+}
+?>
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
