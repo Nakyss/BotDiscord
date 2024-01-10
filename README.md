@@ -22,7 +22,7 @@ Il s'agit d'un bot discord avec plusieurs options.
 - Python `bot`
 - HTML, CSS, JS, PHP `Site Web`
 
-##Info
+## Info
 
 Les donnée son actuellement stockées dans un fichier JSON pour des raison douteuse
 Migration vers un systeme de base de données quand j'aurais le temps et la deter
