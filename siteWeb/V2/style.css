@@ -1,0 +1,77 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&display=swap');
+
+ * {
+    font-family: 'Inter', sans-serif;
+    text-decoration: none;
+    font-style: normal;
+    line-height: normal;
+}
+body{
+    display: flex;
+    padding: 0px;
+    margin: 0px;
+}
+
+#list{
+    background: #2C2F33;
+    height: 100vh;
+    width: 23vw;
+}
+h1{
+    color: #FFF;
+    font-size: 32px;   
+    font-weight: 700;
+    background: #23272A;
+    margin: 0;
+    margin-bottom: 5px;
+}
+#textHere{
+    text-align: center;
+    background: #34373A;
+    width: 77vw;
+    color: #FFF;
+    font-size: 26px;
+}
+#textHere h2{
+    margin-top: 40vh;
+}
+#header{
+    text-align: center;
+    background: #23272A;
+    padding: 36px 20px 26px 20px;
+}
+#header a{
+    color: #99AAB5;
+    font-size: 13px;
+}
+#header a:hover{
+    color: #FFF;
+    font-size: 13px;
+}
+#userList{
+    padding: 0;
+    margin-left: 40px;
+}
+#userList li{
+    display: flex;
+    list-style: none;
+    padding: 0;
+    align-items: center;
+    margin: 20px 0;
+}
+#userList a{
+    color: #FFF;
+    font-size: 20px;
+    font-weight: 600;
+}
+#userList a:hover{
+    color: #99AAB5;
+    cursor: pointer;
+}
+#userList img{
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 17px;
+}
+
