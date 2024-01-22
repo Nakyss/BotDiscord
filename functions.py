@@ -3,6 +3,7 @@ import json
 from datetime import datetime
 import pytz
 import csv
+import mysql.connector
 
 
 
@@ -91,198 +92,6 @@ def getTimeV2():
     # Formatez la date et l'heure au format souhaité
     return paris_now.strftime("%d-%m-%y %H:%M:%S")
 
-def isInJson(id):
-    with open('userTime.json', 'r') as file:
-        data = json.load(file)
-
-    return any(user['id'] == id for user in data['users'])
-
-def createUser(id,name,url):
-    with open('userTime.json', 'r') as rfile:
-        data = json.load(rfile)
-
-    nouvel_utilisateur = {
-        "id": id,
-        "name": name,
-        "urlPP": url,
-        "lastJoinAll": [],
-        "lastQuitAll": [],
-        "totalTimeAll": [],
-        "nbSpamAll": [],
-        "nbMessage": [],
-        "server" : []
-    }
-    data['users'].append(nouvel_utilisateur)
-
-    with open('userTime.json', 'w') as wfile:
-        json.dump(data, wfile, indent=2)
-
-def updateUser(id,idServ,nameServ,edit,action):
-    with open('userTime.json', 'r') as file:
-        data = json.load(file)
-
-    for user in data['users']:
-        if user['id'] == id:
-            match action:
-                case 1: #mettre a jour la date de connexion
-                    inlist = False
-                    inJson = False
-                    #regarde tout les lastjoin pour l'user 
-                    for lastJoinbyServ in user['lastJoinAll']:
-                        #si y'a un last join dans se serveur le mettre a jour
-                        if lastJoinbyServ['idServ'] == idServ:
-                            lastJoinbyServ['lastJoin'] = edit
-                            inJson = True
-                        
-                    if not inJson:
-                        for server in user['server']:
-                            if server['idServ'] == idServ:
-                                inlist = True
-                        if not inlist:
-                            new_serv = {
-                                "idServ": idServ,
-                                "nameServ": nameServ
-                            }
-                            user['server'].append(new_serv)
-                        new_serv = {
-                            "idServ": idServ,
-                            "lastJoin": edit
-                        }
-                        user['lastJoinAll'].append(new_serv)
-
-                case 2: #mettre a jour la date de deconnexion
-                    inlist = False
-                    inJson = False
-                    #regarde tout les lastQuit pour l'user 
-                    for lastQuitbyServ in user['lastQuitAll']:
-                        #si y'a un last Quit dans se serveur le mettre a jour
-                        if lastQuitbyServ['idServ'] == idServ:
-                            lastQuitbyServ['lastQuit'] = edit
-                            inJson = True
-                        
-                    if not inJson:
-                        for server in user['server']:
-                            if server['idServ'] == idServ:
-                                inlist = True
-                        if not inlist:
-                            new_serv = {
-                                "idServ": idServ,
-                                "nameServ": nameServ
-                            }
-                            user['server'].append(new_serv)
-                        new_serv = {
-                            "idServ": idServ,
-                            "lastQuit": edit
-                        }
-                        user['lastQuitAll'].append(new_serv)
-
-                case 3: #ajouter du temps au temps en voc
-                    inlist = False
-                    inJson = False
-                    #regarde tout les lastQuit pour l'user 
-                    for totalTimeByServ in user['totalTimeAll']:
-                        #si y'a un last Quit dans se serveur le mettre a jour
-                        if totalTimeByServ['idServ'] == idServ:
-                            totalTimeByServ['totalTime'] += edit
-                            inJson = True
-                        
-                    if not inJson:
-                        for server in user['server']:
-                            if server['idServ'] == idServ:
-                                inlist = True
-                        if not inlist:
-                            new_serv = {
-                                "idServ": idServ,
-                                "nameServ": nameServ
-                            }
-                            user['server'].append(new_serv)
-                        new_serv = {
-                            "idServ": idServ,
-                            "totalTime": edit
-                        }
-                        user['totalTimeAll'].append(new_serv)
-
-                case 4: #ajouter le nombre de message spam
-                    inlist = False
-                    inJson = False
-                    #regarde tout les lastQuit pour l'user 
-                    for nbSpamByServ in user['nbSpamAll']:
-                        #si y'a un last Quit dans se serveur le mettre a jour
-                        if nbSpamByServ['idServ'] == idServ:
-                            nbSpamByServ['nbSpam'] += edit
-                            inJson = True
-                        
-                    if not inJson:
-                        for server in user['server']:
-                            if server['idServ'] == idServ:
-                                inlist = True
-                        if not inlist:
-                            new_serv = {
-                                "idServ": idServ,
-                                "nameServ": nameServ
-                            }
-                            user['server'].append(new_serv)
-
-                        new_serv = {
-                            "idServ": idServ,
-                            "nbSpam": edit
-                        }
-                        user['nbSpamAll'].append(new_serv)
-
-                case 5: #ajouter nb message envoyer
-                    inlist = False
-                    inJson = False
-                    for nbMess in user['nbMessage']:
-                        if nbMess['idServ'] == idServ:
-                            nbMess['nbMessage'] += edit
-                            inJson = True
-                    
-                        
-                    if not inJson:
-                        for server in user['server']:
-                            if server['idServ'] == idServ:
-                                inlist = True
-                        if not inlist:
-                            new_serv = {
-                                "idServ": idServ,
-                                "nameServ": nameServ
-                            }
-                            user['server'].append(new_serv)
-
-                        new_serv = {
-                            "idServ": idServ,
-                            "nbMessage": edit
-                        }
-                        user['nbMessage'].append(new_serv)
-                
-                case 6 : #changer photo de profile
-                    user["urlPP"] = edit
-
-                case 7 : #changer le nom
-                    user["name"] = edit
-                
-            break
-
-    with open('userTime.json', 'w') as wfile:
-        json.dump(data, wfile, indent=2)
-
-def calculTime(id,idServ):
-    with open('userTime.json', 'r') as file:
-        data = json.load(file)
- 
-    for user in data['users']:
-        if user['id'] == id:
-            lastJoin = None
-            for lastJoinbyServ in user['lastJoinAll']:
-                if lastJoinbyServ['idServ'] == idServ:
-                    lastJoin = lastJoinbyServ['lastJoin']
-
-            if lastJoin != None:
-                for lastQuitbyServ in user['lastQuitAll']:
-                    if lastQuitbyServ['idServ'] == idServ:
-                        return lastQuitbyServ['lastQuit'] - lastJoin
-            return 0
-        
 def log(time,user,action,place):
     print(f"{time} - {user} - {action} in {place}")
     
@@ -290,13 +99,187 @@ def log(time,user,action,place):
         writer = csv.writer(file, delimiter=',')
         writer.writerow([time, user,action,place])
 
-def NewChamp(nouveau_champ,valeur_par_defaut):
-    with open('userTime.json', 'r') as rfile:
+def clearQuotes(message):
+    return message.replace("'","\\'")
+
+def clearBackslashN(message):
+    return message.replace("\n","\\n ")
+
+#------------------------------------------functions for Data-Base-------------------------------------------------
+def isServerExist(mydb,guild):
+    with mysql.connector.connect(**mydb) as db :
+        with db.cursor() as c:
+            c.execute(f"SELECT COUNT(*) FROM SERVER WHERE ID_SERVER = {guild.id}")
+            result = c.fetchone()
+    
+    return (result[0] == 1)
+
+def createServer(mydb,guild):
+    with mysql.connector.connect(**mydb) as db :
+        with db.cursor() as c:
+            c.execute(f'''INSERT INTO `SERVER` (`ID_SERVER`, `NAME`, `ICON_URL`,`NB_USER`, `JOIN_DATE`, `CAN_JOIN_VOC`, `STATUS`) 
+                      VALUES ({guild.id} ,'{clearQuotes(guild.name)}', '{guild.icon.with_size(128).url}',{guild.member_count}, CURDATE(), FALSE, TRUE)''')
+            db.commit()
+
+def updateServer(mydb,guild,bool = "TRUE"):
+    with mysql.connector.connect(**mydb) as db :
+        with db.cursor() as c:
+            c.execute(f"UPDATE `SERVER` SET `NAME` = '{clearQuotes(guild.name)}', `ICON_URL` = '{guild.icon.with_size(128).url}', NB_USER = {guild.member_count}, STATUS = {bool} WHERE `SERVER`.`ID_SERVER` = {guild.id}")
+            db.commit()
+
+def canJoinVocalServer(mydb,guild,bool):
+    with mysql.connector.connect(**mydb) as db :
+        with db.cursor() as c:
+            c.execute(f"UPDATE `SERVER` SET  CAN_JOIN_VOC = {bool} WHERE `SERVER`.`ID_SERVER` = {guild.id}")
+            db.commit()
+
+
+def isUserExist(mydb,user):
+    with mysql.connector.connect(**mydb) as db :
+        with db.cursor() as c:
+            c.execute(f"SELECT COUNT(*) FROM USER WHERE ID_USER = {user.id}")
+            result = c.fetchone()
+    
+    return (result[0] == 1)
+
+def updateUser(mydb,user):
+    #garde le nom si le nom d'affichage n'existe pas 
+    if user.global_name == None:
+       globalName = user.name
+    else:
+       globalName = user.global_name
+
+
+    #verifie si il a une pp ou pas
+    if user.avatar == None :
+        avatarUrl = user.default_avatar.with_size(128).url
+    else:
+        avatarUrl = user.avatar.with_size(128).url
+
+    with mysql.connector.connect(**mydb) as db :
+        with db.cursor() as c:
+            c.execute(f"UPDATE `USER` SET `NAME` = '{user.name}', `NAME_GLOBAL` = '{globalName}',`PP_URL` = '{avatarUrl}' WHERE `USER`.`ID_USER` = {user.id}")
+            db.commit()
+
+def createUser(mydb,user):
+    #garde le nom si le nom d'affichage n'existe pas 
+    if user.global_name == None:
+       globalName = user.name
+    else:
+       globalName = user.global_name
+
+
+    #verifie si il a une pp ou pas
+    if user.avatar == None :
+        avatarUrl = user.default_avatar.with_size(128).url
+    else:
+        avatarUrl = user.avatar.with_size(128).url
+
+       
+    with mysql.connector.connect(**mydb) as db :
+        with db.cursor() as c:
+       
+            c.execute(f"INSERT INTO `USER` (`ID_USER`, `NAME`, `NAME_GLOBAL`, `PP_URL`) VALUES ({user.id} ,'{clearQuotes(user.name)}','{clearQuotes(globalName)}', '{avatarUrl}')")
+            db.commit()
+
+
+def isServerProfileExist(mydb,user):
+    with mysql.connector.connect(**mydb) as db :
+        with db.cursor() as c:
+            c.execute(f"SELECT COUNT(*) FROM USER_SERVER WHERE ID_USER = {user.id} AND ID_SERVER = {user.guild.id}")
+            result = c.fetchone()
+    
+    return (result[0] == 1)
+    
+def updateServerProfile(mydb,user):
+    #verifie si il a une pp ou pas
+    if user.display_avatar != None:
+        avatarUrl = user.display_avatar.with_size(128).url
+    else:
+        if user.avatar != None:
+            avatarUrl = user.avatar.with_size(128).url
+        else:
+            avatarUrl = user.default_avatar.with_size(128).url
+
+
+    with mysql.connector.connect(**mydb) as db :
+        with db.cursor() as c:
+            c.execute(f"UPDATE `USER_SERVER` SET `NAME_SERVER` = '{clearQuotes(user.display_name)}', `PP_URL_SERVER` = '{avatarUrl}' WHERE `USER_SERVER`.`ID_USER` = {user.id} AND `USER_SERVER`.`ID_SERVER` = {user.guild.id}")
+            db.commit()
+
+def createServerProfile(mydb,user):
+    if user.display_avatar != None:
+        avatarUrl = user.display_avatar.with_size(128).url
+    else:
+        if user.avatar != None:
+            avatarUrl = user.avatar.with_size(128).url
+        else:
+            avatarUrl = user.default_avatar.with_size(128).url
+
+    with mysql.connector.connect(**mydb) as db :
+        with db.cursor() as c:
+
+            
+            c.execute(f"INSERT INTO `USER_SERVER` (`ID_USER`, `ID_SERVER`, `NAME_SERVER`,`PP_URL_SERVER`) VALUES ({user.id} ,{user.guild.id}, '{clearQuotes(user.display_name)}', '{avatarUrl}')")
+            db.commit()
+
+
+def newVocalSession(mydb,member):
+    #---add the session to the db
+    join = getTime()
+    with mysql.connector.connect(**mydb) as db :
+        with db.cursor() as c:
+        
+            val = (join,member.id,member.guild.id)
+            c.execute("INSERT INTO `VOCAL_SESSION` (`ID_VOC`, `JOIN`, `QUIT`, `ID_USER`, `ID_SERVER`, `TIME_VOC`) VALUES (NULL ,%s,NULL, %s, %s, NULL)",val)
+            db.commit()
+            id=c.lastrowid
+    
+    #--add the id of the session in a file
+    with open('actualSession.json', 'r') as rfile:
         data = json.load(rfile)
 
+    data[member.id] = [id,join]
 
-    for utilisateur in data['users']:
-        utilisateur[nouveau_champ] = valeur_par_defaut
-
-    with open('userTime.json', 'w') as wfile:
+    with open('actualSession.json', 'w') as wfile:
         json.dump(data, wfile, indent=2)
+
+def closeVocalSession(mydb,member):
+    with open('actualSession.json', 'r') as rfile:
+        data = json.load(rfile)
+
+    #-check if the id exist else return bcs join wasn't save 
+    if not f"{member.id}" in data:
+        return 
+
+
+    with mysql.connector.connect(**mydb) as db :
+        with db.cursor() as c:
+            time = getTime()
+            c.execute(f"UPDATE `VOCAL_SESSION` SET `QUIT` = {time}, `TIME_VOC` = {time-data[f'{member.id}'][1]} WHERE `VOCAL_SESSION`.`ID_VOC` = {data[f'{member.id}'][0]}")
+            db.commit()
+
+
+    del data[f'{member.id}']
+    with open('actualSession.json', 'w') as wfile:
+        json.dump(data, wfile, indent=2)
+
+
+def newMessage(mydb,message):
+    with mysql.connector.connect(**mydb) as db :
+        with db.cursor() as c:
+            #envoie null et pas un string vide quand il n'y a pas de message
+            if message.content == "":
+                content = "NULL"
+            else:
+                content = f"'{clearQuotes(message.content)}'"
+                
+            c.execute(f"INSERT INTO `MESSAGE` (`ID_MESSAGE`, `CONTENT`, `DATE`, `ID_USER`, `ID_SERVER`) VALUES ({message.id} , {content}, STR_TO_DATE('{getTimeV2()}','%d-%m-%y %H:%i:%S'), {message.author.id}, {message.guild.id})")
+            db.commit()
+
+def newSpam(mydb,message,nbrep,content):
+    with mysql.connector.connect(**mydb) as db :
+        with db.cursor() as c:
+
+            c.execute(f"INSERT INTO `SPAM` (`ID_SPAM`, `NB_REP`, `CONTENT`, `DATE`, `ID_USER`, `ID_SERVER`) VALUES ({message.id} , {nbrep}, '{clearQuotes(content)}', STR_TO_DATE('{getTimeV2()}','%d-%m-%y %H:%i:%S'), {message.author.id}, {message.guild.id})")
+            db.commit()
