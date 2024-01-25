@@ -21,14 +21,15 @@ Il s'agit d'un bot discord avec plusieurs options.
 ## Language
 - Python `bot`
 - HTML, CSS, JS, PHP `Site Web`
+- SQL `base de donnée`
 
 ## Info
 
-Les donnée son actuellement stockées dans un fichier JSON pour des raison douteuse
-Migration vers un systeme de base de données quand j'aurais le temps et la deter
+Le bot à sa base de données MySql il stocke un peu plus d'informations dans le but de pouvoir faire des stats plus precise 
 
-Peut être des amelioration pour que le code soit plus "flexible" et facilement adaptable 
+Ajout de 2 commandes pour activer/desactiver le bot qui rejoint aleatoirement
 
-Ajout de commentaire 
-
-Optimisation
+**a faire :** 
+ - Peut être des amelioration pour que le code soit plus "flexible" et facilement adaptable 
+ - Ajout de commentaire 
+ - Optimisation
