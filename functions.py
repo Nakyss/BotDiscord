@@ -91,12 +91,13 @@ def getTimeV2():
     # Formatez la date et l'heure au format souhaité
     return paris_now.strftime("%d-%m-%y %H:%M:%S")
 
-def log(time,user,action,place):
+def log(user,action,place):
+    time = getTimeV2()
     print(f"{time} - {user} - {action} in {place}")
     
     with open('logs.csv', 'a', newline='', encoding='utf-8') as file:
         writer = csv.writer(file, delimiter=',')
-        writer.writerow([time, user,action,place])
+        writer.writerow([time,user,action,place])
 
 def clearQuotes(message):
     return message.replace("'","\\'")

@@ -18,7 +18,7 @@ tree = app_commands.CommandTree(client)
 mydb = {
   'host' : "host",
   'user': "user",
-  'password':"pwd",
+  'password':"password",
   'port':3306,
   'database':"bot_discord"
 }
@@ -71,7 +71,7 @@ async def on_ready():
 
                 # 50% de chance de rejoindre le canal vocal et de jouer une piste audio
                 if random_number <= 0.3:
-                    log(getTimeV2(),bot.user.name,"Play-music-start",f"{channel.guild.name} / {channel.name}")
+                    log(bot.user.name,"Play-music-start",f"{channel.guild.name} / {channel.name}")
                     voice_channel = channel
                     voice_client = await voice_channel.connect()
 
@@ -85,9 +85,9 @@ async def on_ready():
 
                     await voice_client.disconnect()
                 else :
-                    log(getTimeV2(),bot.user.name,"Play-music-but-no-chance",f"{channel.guild.name} / {channel.name}")
+                    log(bot.user.name,"Play-music-but-no-chance",f"{channel.guild.name} / {channel.name}")
             else :
-                log(getTimeV2(),bot.user.name,"Play-music-but-nobody-in-channel",f"{channel.guild.name} / {channel.name}")
+                log(bot.user.name,"Play-music-but-nobody-in-channel",f"{channel.guild.name} / {channel.name}")
 
     
 #-----------------------slash commande---------------------------------------------------------
@@ -97,9 +97,10 @@ async def on_ready():
 async def vocenable_slash(interaction: discord.Interaction):
     if checkCanJoinVoc(mydb,interaction.guild.id) == 0:
         editCanJoinVoc(mydb,interaction.guild.id,1)
-        await interaction.response.send_message(f"{bot.user.name} peut desormais rejoindre des canal vocaux n'importe quand et y joué des sons.",ephemeral=True)
+        log(interaction.user.name,"Enable-Bot-Random-Join-Vocal",interaction.guild)
+        await interaction.response.send_message(f"{bot.user.name} peut desormais rejoindre des canal vocaux n'importe quand et y joué des sons.",ephemeral=True,delete_after=45)
     else:
-        await interaction.response.send_message("L'option est déjà activer dans votre serveur",ephemeral=True)
+        await interaction.response.send_message("L'option est déjà activer dans votre serveur",ephemeral=True,delete_after=45)
 
 
 #Commande pour desactiver le join random du bot
@@ -107,9 +108,10 @@ async def vocenable_slash(interaction: discord.Interaction):
 async def vocenable_slash(interaction: discord.Interaction):
     if checkCanJoinVoc(mydb,interaction.guild.id) == 1:
         editCanJoinVoc(mydb,interaction.guild.id,0)
-        await interaction.response.send_message(f"{bot.user.name} ne peut plus rejoindre des canal vocaux dans se serveur.",ephemeral=True)
+        await interaction.response.send_message(f"{bot.user.name} ne peut plus rejoindre des canal vocaux dans se serveur.",ephemeral=True,delete_after=45)
+        log(interaction.user.name,"Disable-Bot-Random-Join-Vocal",interaction.guild)
     else:
-        await interaction.response.send_message("L'option est déjà désactiver dans votre serveur",ephemeral=True)
+        await interaction.response.send_message("L'option est déjà désactiver dans votre serveur",ephemeral=True,delete_after=45)
 
 #---------------------------------------------------------------------------------------------
 
@@ -121,8 +123,17 @@ async def vocenable_slash(interaction: discord.Interaction):
 #------------------------quand le bot est ajouter a un server---------------------------
 @bot.event
 async def on_guild_join(guild):
+    log(bot.user.name,"Added-to-server",guild.name)
     if not isServerExist(mydb,guild):
         createServer(mydb,guild)
+    else:
+        updateServer(mydb,guild)
+
+
+@bot.event
+async def on_guild_remove(guild):
+    log(bot.user.name,"Kick-from-server",guild.name)
+    updateServer(mydb,guild,0)
 
 #-----------------------changement dans sur le serveur----------------------------------
 @bot.event
@@ -162,10 +173,10 @@ async def on_member_update(before, after):
             updateServerProfile(mydb,after)
 
     if before.display_name != after.display_name: #changement de nom de server
-        log(getTimeV2(),after.name,f"Change-Display_name-from-'{before.display_name}'-to-'{after.display_name}'",after.guild.name)
+        log(after.name,f"Change-Display_name-from-'{before.display_name}'-to-'{after.display_name}'",after.guild.name)
 
     if before.display_avatar.url != after.display_avatar.url:  #changement d'avatar de serveur
-        log(getTimeV2(),after.name,f"Change-Server-Profil-Picture",after.guild.name)
+        log(after.name,f"Change-Server-Profil-Picture",after.guild.name)
     
 
 # - Mise a jour du profil
@@ -176,13 +187,13 @@ async def on_user_update(before, after):
         updateUser(mydb,after)
 
     if before.name != after.name:    #changement de nom
-        log(getTimeV2(),after.name,f"Change-name-from-'{before.name}'-to-'{after.name}'","Nowhere")
+        log(after.name,f"Change-name-from-'{before.name}'-to-'{after.name}'","Nowhere")
 
     if before.global_name != after.global_name: #changement de nom d'affichage
-        log(getTimeV2(),after.name,f"Change-Global_name-from-'{before.global_name}'-to-'{after.global_name}'","Nowhere")
+        log(after.name,f"Change-Global_name-from-'{before.global_name}'-to-'{after.global_name}'","Nowhere")
 
     if before.avatar.url != after.avatar.url:   #changement d'avatar
-        log(getTimeV2(),after.name,f"Change-Profil-Picture","Nowhere")
+        log(after.name,f"Change-Profil-Picture","Nowhere")
 
 
 #----------------------action quand quelle qu'un rejoint ou quitte un voc ------------------------
@@ -199,7 +210,7 @@ async def on_voice_state_update(member, before, after):
         if not isServerProfileExist(mydb,member):
             createServerProfile(mydb,member)
 
-        log(getTimeV2(),member.name,"Join-Voice-Channel",f"{member.guild.name} / {after.channel.name}")
+        log(member.name,"Join-Voice-Channel",f"{member.guild.name} / {after.channel.name}")
 
         newVocalSession(mydb,member)
 
@@ -208,7 +219,7 @@ async def on_voice_state_update(member, before, after):
     elif before.channel is not None and after.channel is None and member != client.user:
         closeVocalSession(mydb,member)
 
-        log(getTimeV2(),member.name,"Left-Voice-Channel",f"{member.guild.name} / {before.channel.name}")
+        log(member.name,"Left-Voice-Channel",f"{member.guild.name} / {before.channel.name}")
 
 
 
@@ -271,7 +282,7 @@ async def on_message(message):
 
         #si plus de 2000 rep pas faire 
         if (nbRep >2000):
-            log(getTimeV2(),message.author,f"Send-4-'{clearBackslashN(messSpam)}'",f"{message.guild.name} / {message.channel.name}")
+            log(message.author,f"Send-4-'{clearBackslashN(messSpam)}'",f"{message.guild.name} / {message.channel.name}")
 
             await message.channel.send("frero abuse, dose un peu")
 
@@ -284,7 +295,7 @@ async def on_message(message):
             channel_status[message.channel.id] = False
             return
         
-        log(getTimeV2(),message.author,f"Send-{nbRep}-'{clearBackslashN(messSpam)}'",f"{message.guild.name} / {message.channel.name}")
+        log(message.author,f"Send-{nbRep}-'{clearBackslashN(messSpam)}'",f"{message.guild.name} / {message.channel.name}")
         
         newSpam(mydb,message,nbRep,messSpam) #add to db
 
@@ -320,4 +331,3 @@ async def on_message(message):
 
 
 bot.run(readToken("token_discord.txt"))
-
