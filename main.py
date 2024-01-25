@@ -10,7 +10,7 @@ from discord.ext import commands
 
 
 intents = discord.Intents.all()
-
+bot = commands.Bot(command_prefix="/", intents=intents)
 
 client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
@@ -18,9 +18,9 @@ tree = app_commands.CommandTree(client)
 mydb = {
   'host' : "host",
   'user': "user",
-  'password':"password",
+  'password':"pwd",
   'port':3306,
-  'database':"db"
+  'database':"bot_discord"
 }
 
 #Liste des différentes possibilités de message ainsi que leurs réponses
@@ -38,10 +38,16 @@ possibilites = {
     "kwa": ["feur", "chi", "driceps","quoicoubeh"]
 }
 
-@client.event
+@bot.event
 async def on_ready():
 
-    print(f'Connecté en tant que {client.user.name}')
+    print(f'Connecté en tant que {bot.user.name}')
+
+    try:
+        synced = await bot.tree.sync()
+        print(f"Synced {len(synced)} commands")
+    except Exception as e:
+        print(e)
 
     #----------attend un temps random et rejoint un voc pour mettre airmax si il y a au moins 1 pers en voc
     while True:
@@ -51,11 +57,11 @@ async def on_ready():
 
         with mysql.connector.connect(**mydb) as db :
             with db.cursor() as c:
-                c.execute(f"SELECT ID_SERVER FROM SERVER WHERE CAN_JOIN_VOC = 1")
+                c.execute(f"SELECT ID_SERVER FROM SERVER WHERE CAN_JOIN_VOC = 1 AND STATUS = 1")
                 result = c.fetchall()
 
         for server in result:
-            guild = client.get_guild(server[0])
+            guild = bot.get_guild(server[0])
             channel = guild.voice_channels[0]
 
             # Vérifie s'il y a au moins 1 personnes dans le canal vocal
@@ -65,7 +71,7 @@ async def on_ready():
 
                 # 50% de chance de rejoindre le canal vocal et de jouer une piste audio
                 if random_number <= 0.3:
-                    log(getTimeV2(),client.user.name,"Play-music-start",f"{channel.guild.name} / {channel.name}")
+                    log(getTimeV2(),bot.user.name,"Play-music-start",f"{channel.guild.name} / {channel.name}")
                     voice_channel = channel
                     voice_client = await voice_channel.connect()
 
@@ -79,16 +85,32 @@ async def on_ready():
 
                     await voice_client.disconnect()
                 else :
-                    log(getTimeV2(),client.user.name,"Play-music-but-no-chance",f"{channel.guild.name} / {channel.name}")
+                    log(getTimeV2(),bot.user.name,"Play-music-but-no-chance",f"{channel.guild.name} / {channel.name}")
             else :
-                log(getTimeV2(),client.user.name,"Play-music-but-nobody-in-channel",f"{channel.guild.name} / {channel.name}")
+                log(getTimeV2(),bot.user.name,"Play-music-but-nobody-in-channel",f"{channel.guild.name} / {channel.name}")
 
     
 #-----------------------slash commande---------------------------------------------------------
 
-#@client.command(guild=discord.Object(id=1186997974333652992))
-#async def clear (ctx, nombre : int ):
-#    print ("cool")
+#Commande pour activer le join random du bot
+@bot.tree.command(name="enable_voc_join", description="Autorise le bot à rejoindre le vocal à des moment aleatoire")
+async def vocenable_slash(interaction: discord.Interaction):
+    if checkCanJoinVoc(mydb,interaction.guild.id) == 0:
+        editCanJoinVoc(mydb,interaction.guild.id,1)
+        await interaction.response.send_message(f"{bot.user.name} peut desormais rejoindre des canal vocaux n'importe quand et y joué des sons.",ephemeral=True)
+    else:
+        await interaction.response.send_message("L'option est déjà activer dans votre serveur",ephemeral=True)
+
+
+#Commande pour desactiver le join random du bot
+@bot.tree.command(name="disable_voc_join", description="Empeche le bot à rejoindre le vocal à des moment aleatoire")
+async def vocenable_slash(interaction: discord.Interaction):
+    if checkCanJoinVoc(mydb,interaction.guild.id) == 1:
+        editCanJoinVoc(mydb,interaction.guild.id,0)
+        await interaction.response.send_message(f"{bot.user.name} ne peut plus rejoindre des canal vocaux dans se serveur.",ephemeral=True)
+    else:
+        await interaction.response.send_message("L'option est déjà désactiver dans votre serveur",ephemeral=True)
+
 #---------------------------------------------------------------------------------------------
 
 
@@ -97,19 +119,13 @@ async def on_ready():
 #-------------------------------------------------------------------
             
 #------------------------quand le bot est ajouter a un server---------------------------
-@client.event
+@bot.event
 async def on_guild_join(guild):
     if not isServerExist(mydb,guild):
         createServer(mydb,guild)
-    else:
-        updateServer(mydb,guild)
-
-@client.event
-async def on_guild_remove(guild):
-    updateServer(mydb,guild,"FALSE")
 
 #-----------------------changement dans sur le serveur----------------------------------
-@client.event
+@bot.event
 async def on_guild_update(before, after):
     if isServerExist(mydb,after):
         updateServer(mydb,after)
@@ -117,7 +133,7 @@ async def on_guild_update(before, after):
         createServer(mydb,after)
 
 #----------------------changement de nb User--------------------------------------------
-@client.event
+@bot.event
 async def on_member_join(member):
     if isServerExist(mydb,member.guild):
         updateServer(mydb,member.guild)
@@ -125,7 +141,7 @@ async def on_member_join(member):
         createServer(mydb,member.guild)
     
 
-@client.event
+@bot.event
 async def on_member_remove(member):
     if isServerExist(mydb,member.guild):
         updateServer(mydb,member.guild)
@@ -139,7 +155,7 @@ async def on_member_remove(member):
 #--------------Mise a jour des User sur des changement--------------
 
 #- Mise a jour du profil de serveur
-@client.event
+@bot.event
 async def on_member_update(before, after):
 
     if isServerProfileExist(mydb,after):
@@ -153,7 +169,7 @@ async def on_member_update(before, after):
     
 
 # - Mise a jour du profil
-@client.event
+@bot.event
 async def on_user_update(before, after):
 
     if isUserExist(mydb,after):
@@ -171,10 +187,10 @@ async def on_user_update(before, after):
 
 #----------------------action quand quelle qu'un rejoint ou quitte un voc ------------------------
 
-@client.event
+@bot.event
 async def on_voice_state_update(member, before, after):
     # Vérifie si le membre a rejoint un canal vocal
-    if before.channel is None and after.channel is not None and member != client.user:
+    if before.channel is None and after.channel is not None and member != bot.user:
 
         if not isServerExist(mydb,member.guild):
             createServer(mydb,member.guild)
@@ -203,12 +219,23 @@ async def on_voice_state_update(member, before, after):
 channel_status = {}
 
 
-@client.event
+@bot.event
 async def on_message(message):
     #On vérifie que ce n'est pas nous même (le bot) qui envoie le message
-    if message.author == client.user:
+    if message.author == bot.user:
         return
     
+    if message.channel.type == discord.ChannelType.private:
+        pv_mess_possibilities = ["Ahoy! Les messages privés sont comme une boîte de chocolats, on sait jamais sur quoi on va tomber.",
+                                 "Oh, un aventurier des messages privés! Quelle quête t'amène par ici?",
+                                 "Hey toi! Les messages privés sont réservés aux VIP. T'as le laissez-passer?",
+                                 "Ah, un explorateur des contrées secrètes! Que puis-je faire pour toi aujourd'hui?",
+                                 "Hé ho, c'est un vol privé ici! Quelle est la destination de ton message?",
+                                 "Bienvenue à bord du train des messages privés! Prochain arrêt : une conversation intéressante. Prêt à embarquer?",
+                                 "Ah, la voie secrète des messages privés s'ouvre devant toi! Quel est ton mot de passe?"]
+        await message.channel.send(pv_mess_possibilities[randint(0,len(pv_mess_possibilities) -1)])
+        return
+
 
     #Si c'est un message de bienvenue 
     if message.type == discord.MessageType.new_member:
@@ -292,5 +319,5 @@ async def on_message(message):
             await message.channel.send(possibilites[i][randint(0, len(possibilites[i]) - 1)])
 
 
-client.run(readToken("token_discord.txt"))
+bot.run(readToken("token_discord.txt"))
 

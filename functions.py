@@ -6,7 +6,6 @@ import csv
 import mysql.connector
 
 
-
 def retirer_points(message):
     caracteres = "!? ."
     message = message.lower()
@@ -121,10 +120,10 @@ def createServer(mydb,guild):
                       VALUES ({guild.id} ,'{clearQuotes(guild.name)}', '{guild.icon.with_size(128).url}',{guild.member_count}, CURDATE(), FALSE, TRUE)''')
             db.commit()
 
-def updateServer(mydb,guild,bool = "TRUE"):
+def updateServer(mydb,guild, status = 1):
     with mysql.connector.connect(**mydb) as db :
         with db.cursor() as c:
-            c.execute(f"UPDATE `SERVER` SET `NAME` = '{clearQuotes(guild.name)}', `ICON_URL` = '{guild.icon.with_size(128).url}', NB_USER = {guild.member_count}, STATUS = {bool} WHERE `SERVER`.`ID_SERVER` = {guild.id}")
+            c.execute(f"UPDATE `SERVER` SET `NAME` = '{clearQuotes(guild.name)}', `ICON_URL` = '{guild.icon.with_size(128).url}', NB_USER = {guild.member_count}, STATUS = {status} WHERE `SERVER`.`ID_SERVER` = {guild.id}")
             db.commit()
 
 def canJoinVocalServer(mydb,guild,bool):
@@ -282,4 +281,20 @@ def newSpam(mydb,message,nbrep,content):
         with db.cursor() as c:
 
             c.execute(f"INSERT INTO `SPAM` (`ID_SPAM`, `NB_REP`, `CONTENT`, `DATE`, `ID_USER`, `ID_SERVER`) VALUES ({message.id} , {nbrep}, '{clearQuotes(content)}', STR_TO_DATE('{getTimeV2()}','%d-%m-%y %H:%i:%S'), {message.author.id}, {message.guild.id})")
+            db.commit()
+
+#---------------------------------SLASH COMMANDS------------------------------------
+            
+def checkCanJoinVoc(mydb,guildId):
+    with mysql.connector.connect(**mydb) as db :
+        with db.cursor() as c:
+            c.execute(f"SELECT CAN_JOIN_VOC FROM SERVER WHERE ID_SERVER = {guildId}")
+            result = c.fetchone()
+    
+    return result[0]
+
+def editCanJoinVoc(mydb,guildId,statut):
+    with mysql.connector.connect(**mydb) as db :
+        with db.cursor() as c:
+            c.execute(f"UPDATE SERVER SET CAN_JOIN_VOC = {statut} WHERE ID_SERVER = {guildId}")
             db.commit()
