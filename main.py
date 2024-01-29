@@ -8,12 +8,12 @@ from discord.ext import commands
 
 
 
-
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix="/", intents=intents)
 
 client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
+
 
 mydb = {
   'host' : "host",
@@ -49,6 +49,7 @@ async def on_ready():
     except Exception as e:
         print(e)
 
+
     #----------attend un temps random et rejoint un voc pour mettre airmax si il y a au moins 1 pers en voc
     while True:
         #genere le temps d'attente entre 25min et 7h
@@ -76,9 +77,11 @@ async def on_ready():
                     voice_client = await voice_channel.connect()
 
                     #faire une liste de tout les fichiers dans le dossier
-                    list = listdir("botSound")
+                    if not folderExist("botSound",guild.id):
+                        createFolder(guild.id,"botSound")
+                    list = listdir(f"botSound/{guild.id}")
                     # Remplacez 'audio_file.mp3' par le chemin de votre fichier audio
-                    voice_client.play(discord.FFmpegPCMAudio("botSound/"+list[randint(0,len(list)-1)]))
+                    voice_client.play(discord.FFmpegPCMAudio(f"botSound/{guild.id}/"+list[randint(0,len(list)-1)]))
 
                     while voice_client.is_playing():
                         await asyncio.sleep(1)
@@ -95,23 +98,31 @@ async def on_ready():
 #Commande pour activer le join random du bot
 @bot.tree.command(name="enable_voc_join", description="Autorise le bot à rejoindre le vocal à des moment aleatoire")
 async def vocenable_slash(interaction: discord.Interaction):
-    if checkCanJoinVoc(mydb,interaction.guild.id) == 0:
-        editCanJoinVoc(mydb,interaction.guild.id,1)
-        log(interaction.user.name,"Enable-Bot-Random-Join-Vocal",interaction.guild)
-        await interaction.response.send_message(f"{bot.user.name} peut desormais rejoindre des canal vocaux n'importe quand et y joué des sons.",ephemeral=True,delete_after=45)
+
+    if interaction.channel.type != discord.ChannelType.private:
+        if not checkCanJoinVoc(mydb,interaction.guild.id):
+            editCanJoinVoc(mydb,interaction.guild.id,1)
+            log(interaction.user.name,"Enable-Bot-Random-Join-Vocal",interaction.guild)
+            await interaction.response.send_message(f"{bot.user.name} peut desormais rejoindre des canal vocaux n'importe quand et y joué des sons.",ephemeral=True,delete_after=45)
+        else:
+            await interaction.response.send_message("L'option est déjà activer dans votre serveur",ephemeral=True,delete_after=45)
     else:
-        await interaction.response.send_message("L'option est déjà activer dans votre serveur",ephemeral=True,delete_after=45)
+        await interaction.response.send_message("Cette commandes n'est pas disponible en message privé",delete_after=120)
 
 
 #Commande pour desactiver le join random du bot
 @bot.tree.command(name="disable_voc_join", description="Empeche le bot à rejoindre le vocal à des moment aleatoire")
 async def vocenable_slash(interaction: discord.Interaction):
-    if checkCanJoinVoc(mydb,interaction.guild.id) == 1:
-        editCanJoinVoc(mydb,interaction.guild.id,0)
-        await interaction.response.send_message(f"{bot.user.name} ne peut plus rejoindre des canal vocaux dans se serveur.",ephemeral=True,delete_after=45)
-        log(interaction.user.name,"Disable-Bot-Random-Join-Vocal",interaction.guild)
+
+    if interaction.channel.type != discord.ChannelType.private:
+        if checkCanJoinVoc(mydb,interaction.guild.id):
+            editCanJoinVoc(mydb,interaction.guild.id,0)
+            await interaction.response.send_message(f"{bot.user.name} ne peut plus rejoindre des canal vocaux dans se serveur.",ephemeral=True,delete_after=45)
+            log(interaction.user.name,"Disable-Bot-Random-Join-Vocal",interaction.guild)
+        else:
+            await interaction.response.send_message("L'option est déjà désactiver dans votre serveur",ephemeral=True,delete_after=45)
     else:
-        await interaction.response.send_message("L'option est déjà désactiver dans votre serveur",ephemeral=True,delete_after=45)
+        await interaction.response.send_message("Cette commandes n'est pas disponible en message privé",delete_after=120)
 
 #---------------------------------------------------------------------------------------------
 
@@ -236,22 +247,32 @@ async def on_message(message):
     if message.author == bot.user:
         return
     
+    #Si il s'agit d'un message privé
     if message.channel.type == discord.ChannelType.private:
-        pv_mess_possibilities = ["Ahoy! Les messages privés sont comme une boîte de chocolats, on sait jamais sur quoi on va tomber.",
-                                 "Oh, un aventurier des messages privés! Quelle quête t'amène par ici?",
-                                 "Hey toi! Les messages privés sont réservés aux VIP. T'as le laissez-passer?",
-                                 "Ah, un explorateur des contrées secrètes! Que puis-je faire pour toi aujourd'hui?",
-                                 "Hé ho, c'est un vol privé ici! Quelle est la destination de ton message?",
-                                 "Bienvenue à bord du train des messages privés! Prochain arrêt : une conversation intéressante. Prêt à embarquer?",
-                                 "Ah, la voie secrète des messages privés s'ouvre devant toi! Quel est ton mot de passe?"]
-        await message.channel.send(pv_mess_possibilities[randint(0,len(pv_mess_possibilities) -1)])
-        return
+        appInfo = await bot.application_info()
+        #si le message viens du createur du bot il a acces à des commandes
+        if message.author == appInfo.owner:
+            await admin(mydb,message)
+            return
+        
+        #Sinon envoyé un message parmit cette liste
+        else : 
+            pv_mess_possibilities = ["Ahoy! Les messages privés sont comme une boîte de chocolats, on sait jamais sur quoi on va tomber.",
+                                    "Oh, un aventurier des messages privés! Quelle quête t'amène par ici?",
+                                    "Hey toi! Les messages privés sont réservés aux VIP. T'as le laissez-passer?",
+                                    "Ah, un explorateur des contrées secrètes! Que puis-je faire pour toi aujourd'hui?",
+                                    "Hé ho, c'est un vol privé ici! Quelle est la destination de ton message?",
+                                    "Bienvenue à bord du train des messages privés! Prochain arrêt : une conversation intéressante. Prêt à embarquer?",
+                                    "Ah, la voie secrète des messages privés s'ouvre devant toi! Quel est ton mot de passe?"]
+            await message.channel.send(pv_mess_possibilities[randint(0,len(pv_mess_possibilities) -1)])
+            return
 
 
     #Si c'est un message de bienvenue 
     if message.type == discord.MessageType.new_member:
         return
     
+
     #si l'utilisateur n'existe pas dans la db ou qu'il n'a pas de profil de server
     if not isServerExist(mydb,message.guild):
             createServer(mydb,message.guild)
@@ -264,7 +285,6 @@ async def on_message(message):
     # Prise en charge des majuscules et mininuscules
     #si le message commence par spam 
     if message.content.lower().startswith('spam'):
-
 
         # Vérifie si le canal est déjà occupé
         if message.channel.id in channel_status and channel_status[message.channel.id]:

@@ -4,7 +4,25 @@ from datetime import datetime
 import pytz
 import csv
 import mysql.connector
+import os
+import shutil
+import discord
 
+
+async def admin (mydb,message):
+    if message.content == "log":
+        await message.channel.send(content="Voila le fichier logs",file=discord.File("logs.csv"))
+
+    elif message.content == "server":
+        with mysql.connector.connect(**mydb) as db :
+            with db.cursor() as c:
+                c.execute(f"SELECT NAME, NB_USER, DATE_FORMAT(JOIN_DATE, '%e %M %Y'), CAN_JOIN_VOC, STATUS FROM SERVER")
+                result = c.fetchall()
+        sendableMesseage = '```'
+        for serv in result:
+            sendableMesseage += f'\n{serv[0]} -  {serv[1]} Utilisateurs  -  Depuis le {serv[2]}  -  Peut rejoindre le voc :{serv[3]}  -  Status : {serv[3]}'
+        sendableMesseage += '\n```'
+        await message.channel.send(sendableMesseage)
 
 def retirer_points(message):
     caracteres = "!? ."
@@ -104,6 +122,18 @@ def clearQuotes(message):
 
 def clearBackslashN(message):
     return message.replace("\n","\\n ")
+
+def folderExist (nameDirectory,nameFolder):
+    directory = os.listdir(nameDirectory)
+
+    for folder in directory:
+        if folder == f"{nameFolder}":
+            return True
+    return False
+
+def createFolder(name,directory):
+    os.makedirs(f"{directory}/{name}")
+    shutil.copy(f"{directory}/PROUT.mp3",f"{directory}/{name}/")
 
 #------------------------------------------functions for Data-Base-------------------------------------------------
 def isServerExist(mydb,guild):
