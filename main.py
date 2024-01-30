@@ -20,7 +20,7 @@ mydb = {
   'user': "user",
   'password':"password",
   'port':3306,
-  'database':"bot_discord"
+  'database':"testDB"
 }
 
 #Liste des différentes possibilités de message ainsi que leurs réponses
@@ -94,25 +94,86 @@ async def on_ready():
 
     
 #-----------------------slash commande---------------------------------------------------------
+#Commande pour afficher tout les son disponible
+@bot.tree.command(name="list_sound", description="Affiche tout les sons pour votre serveur")               
+async def list_slash(interaction: discord.Interaction):
+    if interaction.channel.type != discord.ChannelType.private:
+        if folderExist("botSound",f"{interaction.guild.id}"):
+            listSound = os.listdir(f"botSound/{interaction.guild.id}")
+            if len(listSound)==0:
+                await interaction.response.send_message("Aucun sons enregistrés",ephemeral=True,delete_after=30)
+            displayList = ""
+            for i in range(len(listSound)):
+                displayList += f"{listSound[i].replace('.mp3','')}\n"
+            await interaction.response.send_message(displayList,delete_after=300)
+        else : 
+            await interaction.response.send_message("L'option n'est pas activé sur votre serveur",ephemeral=True,delete_after=30)
+    else:
+        await interaction.response.send_message("Cette commandes n'est pas disponible en message privé",delete_after=120)
+
+#Commande pour ajouter des fichier dans la liste
+@bot.tree.command(name="add_sound", description="Ajouter des sons à pour le bot dans votre serveur")    
+async def add_slash(interaction: discord.Interaction, fichier:discord.Attachment):
+    if interaction.channel.type != discord.ChannelType.private:
+        if fichier.content_type == "audio/mpeg":
+            name = fichier.filename
+            name = name.replace("_",'-')
+            await fichier.save(f"botSound/{interaction.guild.id}/{name}")
+            await interaction.response.send_message(f"{name} bien enregistré",ephemeral=True,delete_after=30)
+        else:
+            await interaction.response.send_message("Envoyer seulement des fichier au format .mp3",ephemeral=True,delete_after=30)
+    else:
+        await interaction.response.send_message("Cette commandes n'est pas disponible en message privé",delete_after=120)
+    
+#Commande pour supprimé des fichier dans la liste
+@bot.tree.command(name="del_sound", description="Supprime des sons à pour le bot dans votre serveur")    
+async def del_slash(interaction: discord.Interaction, fichier: str):
+    if interaction.channel.type != discord.ChannelType.private:
+        fichier += ".mp3"
+        if os.path.exists(f"botSound/{interaction.guild.id}/{fichier}"):
+            os.remove(f"botSound/{interaction.guild.id}/{fichier}")
+            await interaction.response.send_message(f"{fichier} à été supprimé",ephemeral=True,delete_after=30)
+        else:
+            await interaction.response.send_message(f"{fichier} est introuvable",ephemeral=True,delete_after=30)
+    else:
+        await interaction.response.send_message("Cette commandes n'est pas disponible en message privé",delete_after=120)
+
+#Commande help
+@bot.tree.command(name="help", description="Liste des possibilité du bot")
+async def help_slash(interaction: discord.Interaction):
+    await interaction.response.send_message('''
+------------------------------------------------
+- Le bot peut spam un message dans un channel. Il suffit d'envoyer spam 10 messages pour qu'il envoie 10x "message
+- Enregistrement de certaines données pour avoir des stats, retrouvable sur https://nakyss.fr/ 
+- Le bot peut rejoindre à des moment aleatoire un channel vocal dans votre serveur et y jouer des sons choisis parmit une liste que vous gerer.
+    - /enable_voc_join  Pour activer la fonctions
+    - /disable_voc_join  Pour desactiver la fonctions
+    - /list_sound  Affiche tout les sons disponible pour votre serveur
+    - /add_sound   Ajouter un sons à la liste
+    - /del_sound   supprime un son ''',delete_after=400)
+
+
 
 #Commande pour activer le join random du bot
 @bot.tree.command(name="enable_voc_join", description="Autorise le bot à rejoindre le vocal à des moment aleatoire")
-async def vocenable_slash(interaction: discord.Interaction):
+async def disable_voc_slash(interaction: discord.Interaction):
 
     if interaction.channel.type != discord.ChannelType.private:
         if not checkCanJoinVoc(mydb,interaction.guild.id):
             editCanJoinVoc(mydb,interaction.guild.id,1)
+            if not folderExist("botSound",interaction.guild.id):
+                createFolder(interaction.guild.id,"botSound")
             log(interaction.user.name,"Enable-Bot-Random-Join-Vocal",interaction.guild)
             await interaction.response.send_message(f"{bot.user.name} peut desormais rejoindre des canal vocaux n'importe quand et y joué des sons.",ephemeral=True,delete_after=45)
         else:
-            await interaction.response.send_message("L'option est déjà activer dans votre serveur",ephemeral=True,delete_after=45)
+            await interaction.response.send_message("L'option est déjà activer dans votre serveur",ephemeral=True,delete_after=30)
     else:
         await interaction.response.send_message("Cette commandes n'est pas disponible en message privé",delete_after=120)
 
 
 #Commande pour desactiver le join random du bot
 @bot.tree.command(name="disable_voc_join", description="Empeche le bot à rejoindre le vocal à des moment aleatoire")
-async def vocenable_slash(interaction: discord.Interaction):
+async def enable_voc_slash(interaction: discord.Interaction):
 
     if interaction.channel.type != discord.ChannelType.private:
         if checkCanJoinVoc(mydb,interaction.guild.id):
@@ -120,9 +181,12 @@ async def vocenable_slash(interaction: discord.Interaction):
             await interaction.response.send_message(f"{bot.user.name} ne peut plus rejoindre des canal vocaux dans se serveur.",ephemeral=True,delete_after=45)
             log(interaction.user.name,"Disable-Bot-Random-Join-Vocal",interaction.guild)
         else:
-            await interaction.response.send_message("L'option est déjà désactiver dans votre serveur",ephemeral=True,delete_after=45)
+            await interaction.response.send_message("L'option est déjà désactiver dans votre serveur",ephemeral=True,delete_after=30)
     else:
         await interaction.response.send_message("Cette commandes n'est pas disponible en message privé",delete_after=120)
+
+
+
 
 #---------------------------------------------------------------------------------------------
 
