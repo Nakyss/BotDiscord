@@ -1,12 +1,12 @@
 import discord
 from os import listdir
+import mysql.connector
 import asyncio
 from discord import app_commands
-from functions import *
+import functions as f
 from random import randint, random
 from discord.ext import commands
-
-
+from variable import mydb
 
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix="/", intents=intents)
@@ -15,34 +15,19 @@ client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
 
 
-mydb = {
-  'host' : "host",
-  'user': "user",
-  'password':"password",
-  'port':3306,
-  'database':"testDB"
-}
 
 #Liste des différentes possibilités de message ainsi que leurs réponses
-possibilites = {
-    "quoi": ["feur", "chi", "driceps","quoicoubeh"],
-    "oui": ["stiti", "ghours"],
-    "mere": ["méditérannée", "rie"],
-    "mère": ["méditérannée", "rie"],
-    "qoi": ["feur", "chi", "driceps","quoicoubeh"],
-    "quois": ["feur", "chi", "driceps","quoicoubeh"],
-    "koi": ["feur", "chi", "driceps","quoicoubeh"],
-    "kois": ["feur", "chi", "driceps","quoicoubeh"],
-    "qoa": ["feur", "chi", "driceps","quoicoubeh"],
-    "kwoi": ["feur", "chi", "driceps","quoicoubeh"],
-    "kwa": ["feur", "chi", "driceps","quoicoubeh"]
-}
 
 @bot.event
 async def on_ready():
+    for filename in listdir("cogs"):
+        if filename.endswith(".py"):
+            if filename[:-3] not in ["view"]:
+                await bot.load_extension(f"cogs.{filename[:-3]}")
+                print(f"Cogs chargé : {filename}")
 
     print(f'Connecté en tant que {bot.user.name}')
-
+    
     try:
         synced = await bot.tree.sync()
         print(f"Synced {len(synced)} commands")
@@ -72,13 +57,13 @@ async def on_ready():
 
                 # 50% de chance de rejoindre le canal vocal et de jouer une piste audio
                 if random_number <= 0.3:
-                    log(bot.user.name,"Play-music-start",f"{channel.guild.name} / {channel.name}")
+                    f.log(bot.user.name,"Play-music-start",f"{channel.guild.name} / {channel.name}")
                     voice_channel = channel
                     voice_client = await voice_channel.connect()
 
                     #faire une liste de tout les fichiers dans le dossier
-                    if not folderExist("botSound",guild.id):
-                        createFolder(guild.id,"botSound")
+                    if not f.folderExist("botSound",guild.id):
+                        f.createFolder(guild.id,"botSound")
                     list = listdir(f"botSound/{guild.id}")
                     # Remplacez 'audio_file.mp3' par le chemin de votre fichier audio
                     voice_client.play(discord.FFmpegPCMAudio(f"botSound/{guild.id}/"+list[randint(0,len(list)-1)]))
@@ -88,330 +73,57 @@ async def on_ready():
 
                     await voice_client.disconnect()
                 else :
-                    log(bot.user.name,"Play-music-but-no-chance",f"{channel.guild.name} / {channel.name}")
+                    f.log(bot.user.name,"Play-music-but-no-chance",f"{channel.guild.name} / {channel.name}")
             else :
-                log(bot.user.name,"Play-music-but-nobody-in-channel",f"{channel.guild.name} / {channel.name}")
+                f.log(bot.user.name,"Play-music-but-nobody-in-channel",f"{channel.guild.name} / {channel.name}")
 
     
-#-----------------------slash commande---------------------------------------------------------
-#Commande pour afficher tout les son disponible
-@bot.tree.command(name="list_sound", description="Affiche tout les sons pour votre serveur")               
-async def list_slash(interaction: discord.Interaction):
-    if interaction.channel.type != discord.ChannelType.private:
-        if folderExist("botSound",f"{interaction.guild.id}"):
-            listSound = os.listdir(f"botSound/{interaction.guild.id}")
-            if len(listSound)==0:
-                await interaction.response.send_message("Aucun sons enregistrés",ephemeral=True,delete_after=30)
-            displayList = ""
-            for i in range(len(listSound)):
-                displayList += f"{listSound[i].replace('.mp3','')}\n"
-            await interaction.response.send_message(displayList,delete_after=300)
-        else : 
-            await interaction.response.send_message("L'option n'est pas activé sur votre serveur",ephemeral=True,delete_after=30)
-    else:
-        await interaction.response.send_message("Cette commandes n'est pas disponible en message privé",delete_after=120)
-
-#Commande pour ajouter des fichier dans la liste
-@bot.tree.command(name="add_sound", description="Ajouter des sons à pour le bot dans votre serveur")    
-async def add_slash(interaction: discord.Interaction, fichier:discord.Attachment):
-    if interaction.channel.type != discord.ChannelType.private:
-        if fichier.content_type == "audio/mpeg":
-            name = fichier.filename
-            name = name.replace("_",'-')
-            await fichier.save(f"botSound/{interaction.guild.id}/{name}")
-            await interaction.response.send_message(f"{name} bien enregistré",ephemeral=True,delete_after=30)
-        else:
-            await interaction.response.send_message("Envoyer seulement des fichier au format .mp3",ephemeral=True,delete_after=30)
-    else:
-        await interaction.response.send_message("Cette commandes n'est pas disponible en message privé",delete_after=120)
-    
-#Commande pour supprimé des fichier dans la liste
-@bot.tree.command(name="del_sound", description="Supprime des sons à pour le bot dans votre serveur")    
-async def del_slash(interaction: discord.Interaction, fichier: str):
-    if interaction.channel.type != discord.ChannelType.private:
-        fichier += ".mp3"
-        if os.path.exists(f"botSound/{interaction.guild.id}/{fichier}"):
-            os.remove(f"botSound/{interaction.guild.id}/{fichier}")
-            await interaction.response.send_message(f"{fichier} à été supprimé",ephemeral=True,delete_after=30)
-        else:
-            await interaction.response.send_message(f"{fichier} est introuvable",ephemeral=True,delete_after=30)
-    else:
-        await interaction.response.send_message("Cette commandes n'est pas disponible en message privé",delete_after=120)
-
-#Commande help
-@bot.tree.command(name="help", description="Liste des possibilité du bot")
-async def help_slash(interaction: discord.Interaction):
-    await interaction.response.send_message('''
-------------------------------------------------
-- Le bot peut spam un message dans un channel. Il suffit d'envoyer spam 10 messages pour qu'il envoie 10x "message
-- Enregistrement de certaines données pour avoir des stats, retrouvable sur https://nakyss.fr/ 
-- Le bot peut rejoindre à des moment aleatoire un channel vocal dans votre serveur et y jouer des sons choisis parmit une liste que vous gerer.
-    - /enable_voc_join  Pour activer la fonctions
-    - /disable_voc_join  Pour desactiver la fonctions
-    - /list_sound  Affiche tout les sons disponible pour votre serveur
-    - /add_sound   Ajouter un sons à la liste
-    - /del_sound   supprime un son ''',delete_after=400)
 
 
+#----------------------------------------------------------------------------------------------------
+#---                                    SERVER MANAGEMENT                                         ---
+#----------------------------------------------------------------------------------------------------
 
-#Commande pour activer le join random du bot
-@bot.tree.command(name="enable_voc_join", description="Autorise le bot à rejoindre le vocal à des moment aleatoire")
-async def disable_voc_slash(interaction: discord.Interaction):
-
-    if interaction.channel.type != discord.ChannelType.private:
-        if not checkCanJoinVoc(mydb,interaction.guild.id):
-            editCanJoinVoc(mydb,interaction.guild.id,1)
-            if not folderExist("botSound",interaction.guild.id):
-                createFolder(interaction.guild.id,"botSound")
-            log(interaction.user.name,"Enable-Bot-Random-Join-Vocal",interaction.guild)
-            await interaction.response.send_message(f"{bot.user.name} peut desormais rejoindre des canal vocaux n'importe quand et y joué des sons.",ephemeral=True,delete_after=45)
-        else:
-            await interaction.response.send_message("L'option est déjà activer dans votre serveur",ephemeral=True,delete_after=30)
-    else:
-        await interaction.response.send_message("Cette commandes n'est pas disponible en message privé",delete_after=120)
-
-
-#Commande pour desactiver le join random du bot
-@bot.tree.command(name="disable_voc_join", description="Empeche le bot à rejoindre le vocal à des moment aleatoire")
-async def enable_voc_slash(interaction: discord.Interaction):
-
-    if interaction.channel.type != discord.ChannelType.private:
-        if checkCanJoinVoc(mydb,interaction.guild.id):
-            editCanJoinVoc(mydb,interaction.guild.id,0)
-            await interaction.response.send_message(f"{bot.user.name} ne peut plus rejoindre des canal vocaux dans se serveur.",ephemeral=True,delete_after=45)
-            log(interaction.user.name,"Disable-Bot-Random-Join-Vocal",interaction.guild)
-        else:
-            await interaction.response.send_message("L'option est déjà désactiver dans votre serveur",ephemeral=True,delete_after=30)
-    else:
-        await interaction.response.send_message("Cette commandes n'est pas disponible en message privé",delete_after=120)
-
-
-
-
-#---------------------------------------------------------------------------------------------
-
-
-#-------------------------------------------------------------------
-#---                     SERVER MANAGEMENT                       ---
-#-------------------------------------------------------------------
             
 #------------------------quand le bot est ajouter a un server---------------------------
 @bot.event
 async def on_guild_join(guild):
-    log(bot.user.name,"Added-to-server",guild.name)
-    if not isServerExist(mydb,guild):
-        createServer(mydb,guild)
+    f.log(bot.user.name,"Added-to-server",guild.name)
+    if not f.isServerExist(guild):
+        f.createServer(guild)
     else:
-        updateServer(mydb,guild)
+        f.updateServer(guild)
 
 
 @bot.event
 async def on_guild_remove(guild):
-    log(bot.user.name,"Kick-from-server",guild.name)
-    updateServer(mydb,guild,0)
+    f.log(bot.user.name,"Kick-from-server",guild.name)
+    f.updateServer(guild,0)
 
 #-----------------------changement dans sur le serveur----------------------------------
 @bot.event
 async def on_guild_update(before, after):
-    if isServerExist(mydb,after):
-        updateServer(mydb,after)
+    if f.isServerExist(after):
+        f.updateServer(after)
     else:
-        createServer(mydb,after)
+        f.createServer(after)
 
 #----------------------changement de nb User--------------------------------------------
 @bot.event
 async def on_member_join(member):
-    if isServerExist(mydb,member.guild):
-        updateServer(mydb,member.guild)
+    if f.isServerExist(member.guild):
+        f.updateServer(member.guild)
     else:
-        createServer(mydb,member.guild)
+        f.createServer(member.guild)
     
 
 @bot.event
 async def on_member_remove(member):
-    if isServerExist(mydb,member.guild):
-        updateServer(mydb,member.guild)
+    if f.isServerExist(member.guild):
+        f.updateServer(member.guild)
     else:
-        createServer(mydb,member.guild)
-
-#-------------------------------------------------------------------
-#---                         USER UPDATE                         ---
-#-------------------------------------------------------------------
-
-#--------------Mise a jour des User sur des changement--------------
-
-#- Mise a jour du profil de serveur
-@bot.event
-async def on_member_update(before, after):
-
-    if isServerProfileExist(mydb,after):
-            updateServerProfile(mydb,after)
-
-    if before.display_name != after.display_name: #changement de nom de server
-        log(after.name,f"Change-Display_name-from-'{before.display_name}'-to-'{after.display_name}'",after.guild.name)
-
-    if before.display_avatar.url != after.display_avatar.url:  #changement d'avatar de serveur
-        log(after.name,f"Change-Server-Profil-Picture",after.guild.name)
-    
-
-# - Mise a jour du profil
-@bot.event
-async def on_user_update(before, after):
-
-    if isUserExist(mydb,after):
-        updateUser(mydb,after)
-
-    if before.name != after.name:    #changement de nom
-        log(after.name,f"Change-name-from-'{before.name}'-to-'{after.name}'","Nowhere")
-
-    if before.global_name != after.global_name: #changement de nom d'affichage
-        log(after.name,f"Change-Global_name-from-'{before.global_name}'-to-'{after.global_name}'","Nowhere")
-
-    if before.avatar.url != after.avatar.url:   #changement d'avatar
-        log(after.name,f"Change-Profil-Picture","Nowhere")
-
-
-#----------------------action quand quelle qu'un rejoint ou quitte un voc ------------------------
-
-@bot.event
-async def on_voice_state_update(member, before, after):
-    # Vérifie si le membre a rejoint un canal vocal
-    if before.channel is None and after.channel is not None and member != bot.user:
-
-        if not isServerExist(mydb,member.guild):
-            createServer(mydb,member.guild)
-        if not isUserExist(mydb,member):
-            createUser(mydb,member)
-        if not isServerProfileExist(mydb,member):
-            createServerProfile(mydb,member)
-
-        log(member.name,"Join-Voice-Channel",f"{member.guild.name} / {after.channel.name}")
-
-        newVocalSession(mydb,member)
-
-
-    #verifie si le membre a quitte le canal
-    elif before.channel is not None and after.channel is None and member != client.user:
-        closeVocalSession(mydb,member)
-
-        log(member.name,"Left-Voice-Channel",f"{member.guild.name} / {before.channel.name}")
+        f.createServer(member.guild)
 
 
 
-#---------------------action a l'envoie d'un message---------------------------------------------
-
-
-#definie le statue d'un channel
-channel_status = {}
-
-
-@bot.event
-async def on_message(message):
-    #On vérifie que ce n'est pas nous même (le bot) qui envoie le message
-    if message.author == bot.user:
-        return
-    
-    #Si il s'agit d'un message privé
-    if message.channel.type == discord.ChannelType.private:
-        appInfo = await bot.application_info()
-        #si le message viens du createur du bot il a acces à des commandes
-        if message.author == appInfo.owner:
-            await admin(mydb,message)
-            return
-        
-        #Sinon envoyé un message parmit cette liste
-        else : 
-            pv_mess_possibilities = ["Ahoy! Les messages privés sont comme une boîte de chocolats, on sait jamais sur quoi on va tomber.",
-                                    "Oh, un aventurier des messages privés! Quelle quête t'amène par ici?",
-                                    "Hey toi! Les messages privés sont réservés aux VIP. T'as le laissez-passer?",
-                                    "Ah, un explorateur des contrées secrètes! Que puis-je faire pour toi aujourd'hui?",
-                                    "Hé ho, c'est un vol privé ici! Quelle est la destination de ton message?",
-                                    "Bienvenue à bord du train des messages privés! Prochain arrêt : une conversation intéressante. Prêt à embarquer?",
-                                    "Ah, la voie secrète des messages privés s'ouvre devant toi! Quel est ton mot de passe?"]
-            await message.channel.send(pv_mess_possibilities[randint(0,len(pv_mess_possibilities) -1)])
-            return
-
-
-    #Si c'est un message de bienvenue 
-    if message.type == discord.MessageType.new_member:
-        return
-    
-
-    #si l'utilisateur n'existe pas dans la db ou qu'il n'a pas de profil de server
-    if not isServerExist(mydb,message.guild):
-            createServer(mydb,message.guild)
-    if not isUserExist(mydb,message.author):
-        createUser(mydb,message.author)
-    if not isServerProfileExist(mydb,message.author):
-        createServerProfile(mydb,message.author)
-
-
-    # Prise en charge des majuscules et mininuscules
-    #si le message commence par spam 
-    if message.content.lower().startswith('spam'):
-
-        # Vérifie si le canal est déjà occupé
-        if message.channel.id in channel_status and channel_status[message.channel.id]:
-            await message.channel.send("Un spam est déjà en cours, veuillez patienter.")
-            return
-
-        #decoupe le message a chaque espace
-        cutedContent=cutMessage(message.content)
-
-        nbRep = cutedContent[1]
-        messSpam = cutedContent[2]
-
-        # Marque le canal comme occupé
-        channel_status[message.channel.id] = True
-
-        #si plus de 2000 rep pas faire 
-        if (nbRep >2000):
-            log(message.author,f"Send-4-'{clearBackslashN(messSpam)}'",f"{message.guild.name} / {message.channel.name}")
-
-            await message.channel.send("frero abuse, dose un peu")
-
-            for i in range(4):
-                await message.channel.send(messSpam)
-            await message.channel.send("4 fois c'est deja pas mal")
-
-            newSpam(mydb,message,4,messSpam)  #add to db
-            
-            channel_status[message.channel.id] = False
-            return
-        
-        log(message.author,f"Send-{nbRep}-'{clearBackslashN(messSpam)}'",f"{message.guild.name} / {message.channel.name}")
-        
-        newSpam(mydb,message,nbRep,messSpam) #add to db
-
-        # si plus de 6 rep repartir les rep dans plusieur messages
-        if (nbRep > 6 ):
-            tab = calculNbMess(messSpam,nbRep)
-            
-            for i in range (tab[0]):
-                await message.channel.send((messSpam+"\n")*tab[1])
-            if (tab[2] != 0):
-                await message.channel.send((cutedContent[2]+"\n")*tab[2])
-            
-        elif(nbRep > 0):
-        #envoie nbRep fois le messages
-            for i in range (nbRep):
-                await message.channel.send(messSpam)
-
-        else:
-            await message.channel.send("Pourquoi faire ?")
-
-        channel_status[message.channel.id] = False
-        return
-    else:
-        #ajoute un message si c'est pas un spam
-        newMessage(mydb,message)
-
-    
-
-    # Si le contenu du message dont on a enlevé la ponctuation et les espaces termine par un des mots listés dans le dictionnaire possibilites, alors répondre au hasard une des réponses présente dans la liste correspondante
-    for i in possibilites:
-        if retirer_points(message.content).endswith(i): 
-            await message.channel.send(possibilites[i][randint(0, len(possibilites[i]) - 1)])
-
-
-bot.run(readToken("token_discord.txt"))
+bot.run(f.readToken("token_discord.txt"))

@@ -7,9 +7,10 @@ import mysql.connector
 import os
 import shutil
 import discord
+from variable import mydb
 
 
-async def admin (mydb,message):
+async def admin (message):
     if message.content == "log":
         await message.channel.send(content="Voila le fichier logs",file=discord.File("logs.csv"))
 
@@ -136,7 +137,7 @@ def createFolder(name,directory):
     shutil.copy(f"{directory}/PROUT.mp3",f"{directory}/{name}/")
 
 #------------------------------------------functions for Data-Base-------------------------------------------------
-def isServerExist(mydb,guild):
+def isServerExist(guild):
     with mysql.connector.connect(**mydb) as db :
         with db.cursor() as c:
             c.execute(f"SELECT COUNT(*) FROM SERVER WHERE ID_SERVER = {guild.id}")
@@ -144,27 +145,27 @@ def isServerExist(mydb,guild):
     
     return (result[0] == 1)
 
-def createServer(mydb,guild):
+def createServer(guild):
     with mysql.connector.connect(**mydb) as db :
         with db.cursor() as c:
             c.execute(f'''INSERT INTO `SERVER` (`ID_SERVER`, `NAME`, `ICON_URL`,`NB_USER`, `JOIN_DATE`, `CAN_JOIN_VOC`, `STATUS`) 
                       VALUES ({guild.id} ,'{clearQuotes(guild.name)}', '{guild.icon.with_size(128).url}',{guild.member_count}, CURDATE(), FALSE, TRUE)''')
             db.commit()
 
-def updateServer(mydb,guild, status = 1):
+def updateServer(guild, status = 1):
     with mysql.connector.connect(**mydb) as db :
         with db.cursor() as c:
             c.execute(f"UPDATE `SERVER` SET `NAME` = '{clearQuotes(guild.name)}', `ICON_URL` = '{guild.icon.with_size(128).url}', NB_USER = {guild.member_count}, STATUS = {status} WHERE `SERVER`.`ID_SERVER` = {guild.id}")
             db.commit()
 
-def canJoinVocalServer(mydb,guild,bool):
+def canJoinVocalServer(guild,bool):
     with mysql.connector.connect(**mydb) as db :
         with db.cursor() as c:
             c.execute(f"UPDATE `SERVER` SET  CAN_JOIN_VOC = {bool} WHERE `SERVER`.`ID_SERVER` = {guild.id}")
             db.commit()
 
 
-def isUserExist(mydb,user):
+def isUserExist(user):
     with mysql.connector.connect(**mydb) as db :
         with db.cursor() as c:
             c.execute(f"SELECT COUNT(*) FROM USER WHERE ID_USER = {user.id}")
@@ -172,7 +173,7 @@ def isUserExist(mydb,user):
     
     return (result[0] == 1)
 
-def updateUser(mydb,user):
+def updateUser(user):
     #garde le nom si le nom d'affichage n'existe pas 
     if user.global_name == None:
        globalName = user.name
@@ -191,7 +192,7 @@ def updateUser(mydb,user):
             c.execute(f"UPDATE `USER` SET `NAME` = '{user.name}', `NAME_GLOBAL` = '{globalName}',`PP_URL` = '{avatarUrl}' WHERE `USER`.`ID_USER` = {user.id}")
             db.commit()
 
-def createUser(mydb,user):
+def createUser(user):
     #garde le nom si le nom d'affichage n'existe pas 
     if user.global_name == None:
        globalName = user.name
@@ -213,7 +214,7 @@ def createUser(mydb,user):
             db.commit()
 
 
-def isServerProfileExist(mydb,user):
+def isServerProfileExist(user):
     with mysql.connector.connect(**mydb) as db :
         with db.cursor() as c:
             c.execute(f"SELECT COUNT(*) FROM USER_SERVER WHERE ID_USER = {user.id} AND ID_SERVER = {user.guild.id}")
@@ -221,7 +222,7 @@ def isServerProfileExist(mydb,user):
     
     return (result[0] == 1)
     
-def updateServerProfile(mydb,user):
+def updateServerProfile(user):
     #verifie si il a une pp ou pas
     if user.display_avatar != None:
         avatarUrl = user.display_avatar.with_size(128).url
@@ -237,7 +238,7 @@ def updateServerProfile(mydb,user):
             c.execute(f"UPDATE `USER_SERVER` SET `NAME_SERVER` = '{clearQuotes(user.display_name)}', `PP_URL_SERVER` = '{avatarUrl}' WHERE `USER_SERVER`.`ID_USER` = {user.id} AND `USER_SERVER`.`ID_SERVER` = {user.guild.id}")
             db.commit()
 
-def createServerProfile(mydb,user):
+def createServerProfile(user):
     if user.display_avatar != None:
         avatarUrl = user.display_avatar.with_size(128).url
     else:
@@ -254,7 +255,7 @@ def createServerProfile(mydb,user):
             db.commit()
 
 
-def newVocalSession(mydb,member):
+def newVocalSession(member):
     #---add the session to the db
     join = getTime()
     with mysql.connector.connect(**mydb) as db :
@@ -274,7 +275,7 @@ def newVocalSession(mydb,member):
     with open('actualSession.json', 'w') as wfile:
         json.dump(data, wfile, indent=2)
 
-def closeVocalSession(mydb,member):
+def closeVocalSession(member):
     with open('actualSession.json', 'r') as rfile:
         data = json.load(rfile)
 
@@ -295,19 +296,14 @@ def closeVocalSession(mydb,member):
         json.dump(data, wfile, indent=2)
 
 
-def newMessage(mydb,message):
+def newMessage(message):
     with mysql.connector.connect(**mydb) as db :
         with db.cursor() as c:
-            #envoie null et pas un string vide quand il n'y a pas de message
-            if message.content == "":
-                content = "NULL"
-            else:
-                content = f"'{clearQuotes(message.content)}'"
                 
-            c.execute(f"INSERT INTO `MESSAGE` (`ID_MESSAGE`, `CONTENT`, `DATE`, `ID_USER`, `ID_SERVER`) VALUES ({message.id} , {content}, STR_TO_DATE('{getTimeV2()}','%d-%m-%y %H:%i:%S'), {message.author.id}, {message.guild.id})")
+            c.execute(f"INSERT INTO `MESSAGE` (ID_MESSAGE, LENGTH, NB_ATTACHMEMTS, DATE, ID_USER, ID_SERVER) VALUES ({message.id} , {len(message.content)}, {len(message.attachments)},STR_TO_DATE('{getTimeV2()}','%d-%m-%y %H:%i:%S'), {message.author.id}, {message.guild.id})")
             db.commit()
 
-def newSpam(mydb,message,nbrep,content):
+def newSpam(message,nbrep,content):
     with mysql.connector.connect(**mydb) as db :
         with db.cursor() as c:
 
@@ -316,7 +312,7 @@ def newSpam(mydb,message,nbrep,content):
 
 #---------------------------------SLASH COMMANDS------------------------------------
             
-def checkCanJoinVoc(mydb,guildId):
+def checkCanJoinVoc(guildId):
     with mysql.connector.connect(**mydb) as db :
         with db.cursor() as c:
             c.execute(f"SELECT CAN_JOIN_VOC FROM SERVER WHERE ID_SERVER = {guildId}")
@@ -324,7 +320,7 @@ def checkCanJoinVoc(mydb,guildId):
     
     return result[0]
 
-def editCanJoinVoc(mydb,guildId,statut):
+def editCanJoinVoc(guildId,statut):
     with mysql.connector.connect(**mydb) as db :
         with db.cursor() as c:
             c.execute(f"UPDATE SERVER SET CAN_JOIN_VOC = {statut} WHERE ID_SERVER = {guildId}")
