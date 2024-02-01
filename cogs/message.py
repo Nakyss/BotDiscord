@@ -20,7 +20,7 @@ class MessageCog(commands.Cog):
             appInfo = await self.bot.application_info()
             #si le message viens du createur du bot il a acces à des commandes
             if message.author == appInfo.owner:
-                await f.admin(message)
+                await f.admin(self.bot,message)
                 return
             
             #Sinon envoyé un message parmit cette liste
@@ -107,7 +107,7 @@ class MessageCog(commands.Cog):
         # Si le contenu du message dont on a enlevé la ponctuation et les espaces termine par un des mots listés dans le dictionnaire possibilites, alors répondre au hasard une des réponses présente dans la liste correspondante
         for i in possibilites:
             if f.retirer_points(message.content).endswith(i): 
-                await message.channel.send(possibilites[i][randint(0, len(possibilites[i]) - 1)])
+                await message.reply(possibilites[i][randint(0, len(possibilites[i]) - 1)])
         
 
 
