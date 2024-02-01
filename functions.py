@@ -10,7 +10,7 @@ import discord
 from variable import mydb
 
 
-async def admin (message):
+async def admin (bot,message):
     if message.content.lower() == "log":
         await message.channel.send(content="Voila le fichier logs",file=discord.File("logs.csv"))
 
@@ -35,6 +35,17 @@ async def admin (message):
             sendableMesseage += f'\n{mess[0]} - {mess[1]} Caractères - {mess[2]} Fichier - {mess[3]} '
         sendableMesseage += '\n```'
         await message.channel.send(sendableMesseage)
+    
+    elif message.content.lower().startswith("reload"):
+        splited = message.content.split(' ')
+        cogs = os.listdir("cogs")
+        if splited[1] in cogs:
+            await bot.reload_extension(f"cogs.{splited[1][:-3]}")
+            print(f"{splited[1]} à été rechargé")
+            await message.reply(f"{splited[1]} rechargé")
+        else:
+            await message.reply(f"{splited[1]} introuvable")
+
 
 
 def retirer_points(message):
