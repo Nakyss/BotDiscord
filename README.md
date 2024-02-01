@@ -29,6 +29,11 @@ Le bot à sa base de données MySql il stocke un peu plus d'informations dans le
 
 Ajout de 2 commandes pour activer/desactiver le bot qui rejoint aleatoirement
 
+Nouvelle commande pour ajouter/supprimé des sons pour le bot et afficher la liste
+
+implementation des cogs pour organisé le code
+ - Possibilité de mettre un jour une partie du code avec un cog et de le recharger sans avoir à eteindre le bot et le relancer
+
 **a faire :** 
  - Peut être des amelioration pour que le code soit plus "flexible" et facilement adaptable 
  - Ajout de commentaire 
