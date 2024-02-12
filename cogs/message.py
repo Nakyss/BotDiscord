@@ -1,5 +1,6 @@
 import discord
 import functions as f
+import adminFunction
 from discord.ext import commands
 from random import randint
 from variable import pv_mess_possibilities,channel_status,possibilites
@@ -20,7 +21,7 @@ class MessageCog(commands.Cog):
             appInfo = await self.bot.application_info()
             #si le message viens du createur du bot il a acces à des commandes
             if message.author == appInfo.owner:
-                await f.admin(self.bot,message)
+                await adminFunction.admin(self.bot,message)
                 return
             
             #Sinon envoyé un message parmit cette liste

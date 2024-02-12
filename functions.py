@@ -7,45 +7,15 @@ import mysql.connector
 import os
 import shutil
 import discord
+from random import randint,random
+import asyncio
 from variable import mydb
+import variable as v
+from yt_dlp import YoutubeDL
+from youtubesearchpython import VideosSearch
 
-
-async def admin (bot,message):
-    if message.content.lower() == "log":
-        await message.channel.send(content="Voila le fichier logs",file=discord.File("logs.csv"))
-
-    elif message.content.lower() == "server":
-        with mysql.connector.connect(**mydb) as db :
-            with db.cursor() as c:
-                c.execute(f"SELECT NAME, NB_USER, DATE_FORMAT(JOIN_DATE, '%e/%M/%Y'), CAN_JOIN_VOC, STATUS FROM SERVER")
-                result = c.fetchall()
-        sendableMesseage = '```'
-        for serv in result:
-            sendableMesseage += f'\n{serv[0]} -  {serv[1]} Utilisateurs  -  Depuis le {serv[2]}  -  Peut rejoindre le voc :{serv[3]}  -  Status : {serv[3]}'
-        sendableMesseage += '\n```'
-        await message.channel.send(sendableMesseage)
-
-    elif message.content.lower() == "message":
-        with mysql.connector.connect(**mydb) as db :
-            with db.cursor() as c:
-                c.execute(f"SELECT U.NAME_GLOBAL, M.LENGTH, M.NB_ATTACHMEMTS, DATE_FORMAT(DATE, '%H:%i %e/%m/%Y') FROM MESSAGE M JOIN USER U ON U.ID_USER = M.ID_USER ORDER BY M.DATE DESC LIMIT 10")
-                result = c.fetchall()
-        sendableMesseage = '```'
-        for mess in result:
-            sendableMesseage += f'\n{mess[0]} - {mess[1]} Caractères - {mess[2]} Fichier - {mess[3]} '
-        sendableMesseage += '\n```'
-        await message.channel.send(sendableMesseage)
-    
-    elif message.content.lower().startswith("reload"):
-        splited = message.content.split(' ')
-        cogs = os.listdir("cogs")
-        if splited[1] in cogs:
-            await bot.reload_extension(f"cogs.{splited[1][:-3]}")
-            print(f"{splited[1]} à été rechargé")
-            await message.reply(f"{splited[1]} rechargé")
-        else:
-            await message.reply(f"{splited[1]} introuvable")
-
+YDL_OPTIONS = {'format': 'bestaudio/best', 'noplaylist': 'True'}
+ytdl = YoutubeDL(YDL_OPTIONS)
 
 
 def retirer_points(message):
@@ -159,6 +129,85 @@ def createFolder(name,directory):
     os.makedirs(f"{directory}/{name}")
     shutil.copy(f"{directory}/PROUT.mp3",f"{directory}/{name}/")
 
+
+def maxUser(voice_channel):
+    lenMaxChannel = 0
+    maxChannel = ()
+    for channel in voice_channel:
+        if len(channel.members) >= lenMaxChannel:
+            maxChannel = channel
+            lenMaxChannel = len(channel.members)
+    return maxChannel
+    
+def getAllSong(interaction):
+        choice = []
+        if folderExist("botSound",f"{interaction.guild.id}"):
+                listSound = os.listdir(f"botSound/{interaction.guild.id}")
+                if len(listSound) == 0:
+                    choice.append("Aucun son disponible")
+                    return choice
+                for sound in listSound:
+                    choice.append(sound[:-4])
+        return choice
+
+def isInVoiceChannel(client,guild):
+    voiceClient = client.voice_clients
+    if len(voiceClient) == 0:
+        return False
+    for client in voiceClient:
+        if client.guild.id == guild.id:
+            return True
+    return False
+
+async def randomJoin(bot,guild):
+    stop = 0
+    while stop < 5:
+        #genere le temps d'attente entre 25min et 7h
+        waitTime = randint(1500,25200)
+        await asyncio.sleep(waitTime)
+
+        if checkCanJoinVoc(guild.id):
+            channel = maxUser(guild.voice_channels)
+
+
+            # Vérifie s'il y a au moins 1 personnes dans le canal vocal
+            if len(channel.members) >= 1:
+                # Génération d'un nombre aléatoire pour la condition "au hasard"
+                random_number = random()
+
+                # 50% de chance de rejoindre le canal vocal et de jouer une piste audio
+                if random_number <= 0.3:
+                    if not isInVoiceChannel(bot,guild):
+                        log(bot.user.name,"Play-music-start",f"{channel.guild.name} / {channel.name}")
+                        stop = 0
+                        voice_channel = channel
+                        voice_client = await voice_channel.connect()
+
+                        #faire une liste de tout les fichiers dans le dossier
+                        if not folderExist("botSound",guild.id):
+                            createFolder(guild.id,"botSound")
+                        list = os.listdir(f"botSound/{guild.id}")
+                        # Remplacez 'audio_file.mp3' par le chemin de votre fichier audio
+                        voice_client.play(discord.FFmpegPCMAudio(f"botSound/{guild.id}/"+list[randint(0,len(list)-1)]))
+
+                        while voice_client.is_playing():
+                            await asyncio.sleep(1)
+
+                        await voice_client.disconnect()
+                    else:
+                        log(bot.user.name,"Can't-join-because-already-here",channel.guild.name)
+                else :
+                    log(bot.user.name,"Play-music-but-no-chance",f"{guild.name} / {channel.name}")
+                    stop = 0
+            else :
+                log(bot.user.name,"Play-music-but-nobody-in-a-voice-channel",guild.name)
+                stop += 1
+        else:
+            for i in range (len(v.guild_status)):
+                if v.guild_status[i] == guild.id:
+                    del(v.guild_status[i])
+                    return
+
 #------------------------------------------functions for Data-Base-------------------------------------------------
 def isServerExist(guild):
     with mysql.connector.connect(**mydb) as db :
@@ -179,12 +228,6 @@ def updateServer(guild, status = 1):
     with mysql.connector.connect(**mydb) as db :
         with db.cursor() as c:
             c.execute(f"UPDATE `SERVER` SET `NAME` = '{clearQuotes(guild.name)}', `ICON_URL` = '{guild.icon.with_size(128).url}', NB_USER = {guild.member_count}, STATUS = {status} WHERE `SERVER`.`ID_SERVER` = {guild.id}")
-            db.commit()
-
-def canJoinVocalServer(guild,bool):
-    with mysql.connector.connect(**mydb) as db :
-        with db.cursor() as c:
-            c.execute(f"UPDATE `SERVER` SET  CAN_JOIN_VOC = {bool} WHERE `SERVER`.`ID_SERVER` = {guild.id}")
             db.commit()
 
 
@@ -273,7 +316,6 @@ def createServerProfile(user):
     with mysql.connector.connect(**mydb) as db :
         with db.cursor() as c:
 
-            
             c.execute(f"INSERT INTO `USER_SERVER` (`ID_USER`, `ID_SERVER`, `NAME_SERVER`,`PP_URL_SERVER`) VALUES ({user.id} ,{user.guild.id}, '{clearQuotes(user.display_name)}', '{avatarUrl}')")
             db.commit()
 
@@ -348,3 +390,70 @@ def editCanJoinVoc(guildId,statut):
         with db.cursor() as c:
             c.execute(f"UPDATE SERVER SET CAN_JOIN_VOC = {statut} WHERE ID_SERVER = {guildId}")
             db.commit()
+
+#--playSong-------
+
+async def playSong(interaction,vc):
+    while len(v.musicQueue[interaction.guild.id]):   #boucle tant que la liste n'est pas vide
+        if not vc.is_connected():
+            del v.musicQueue[interaction.guild.id]
+            return
+        if not len(interaction.user.voice.channel.members) > 1:   #se deconnecte si le bot est tout seul en voc
+            del v.musicQueue[interaction.guild.id]
+            return
+        
+        if v.musicQueue[interaction.guild.id][0]['source'].startswith("https://"):    #Lance le son si il s'agit d'une video youtube
+            data = ytdl.extract_info(v.musicQueue[interaction.guild.id][0]['source'], download=False)
+            song = data['url']
+            log(interaction.user.name,f"Play-{v.musicQueue[interaction.guild.id][0]['title']}",f"{vc.channel.name} / {interaction.guild.name}")
+            vc.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(song, before_options = "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5"),0.3))
+        else:
+            if not v.musicQueue[interaction.guild.id][0]['source'].endswith(".mp3"):   #Lance le son si il s'agit d'un son du serveur
+                    v.musicQueue[interaction.guild.id][0]['source'] += ".mp3"
+            log(interaction.user.name,f"Play-{v.musicQueue[interaction.guild.id][0]['title']}",f"{vc.channel.name} / {interaction.guild.name}")
+            vc.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(v.musicQueue[interaction.guild.id][0]['source']),0.85))
+
+        while vc.is_playing():
+            await asyncio.sleep(1)
+        v.musicQueue[interaction.guild.id].pop(0) #enleve le son de la liste a la fin du son
+
+    await vc.disconnect()
+    del v.musicQueue[interaction.guild.id]
+
+async def newJoin(son,interaction):
+    if interaction.user.voice == None:
+        await interaction.response.send_message("Vous n'etes pas connecté dans un canal vocal",ephemeral=True,delete_after=30)
+        return
+    
+    if son.startswith("https://"):
+        title = ytdl.extract_info(son, download=False)['title']
+        song = {'source':son, 'title':title}
+
+    elif os.path.exists(f"botSound/{interaction.guild.id}/{son}.mp3"):
+        song = {'source':f"botSound/{interaction.guild.id}/{son}.mp3", 'title':son}
+        
+    else:
+        search = VideosSearch(son, limit=1)
+        song = {'source':search.result()["result"][0]["link"], 'title':search.result()["result"][0]["title"]}
+    
+    await interaction.response.send_message(f"Lancement de **'{song['title']}'**",ephemeral=True,delete_after=30)
+    v.musicQueue[interaction.guild.id] = [song]
+    voice_channel = interaction.user.voice.channel
+
+    vc = await voice_channel.connect()
+    await playSong(interaction,vc)
+
+async def addSong(son,interaction):
+    if son.startswith("https://"):
+        title = ytdl.extract_info(son, download=False)['title']
+        song = {'source':son, 'title':title}
+    
+    elif os.path.exists(f"botSound/{interaction.guild.id}/{son}"):
+        song = {'source':f"botSound/{interaction.guild.id}/{son}", 'title':son}
+
+    else:
+        search = VideosSearch(son, limit=1)
+        song = {'source':search.result()["result"][0]["link"], 'title':search.result()["result"][0]["title"]}
+    
+    v.musicQueue[interaction.guild.id].append(song)
+    await interaction.response.send_message(f"Ajout de **'{song['title']}'** en {len(v.musicQueue[interaction.guild.id])} eme position de la liste",ephemeral=True,delete_after=30)

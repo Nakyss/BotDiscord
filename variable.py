@@ -1,9 +1,9 @@
 mydb = {
   'host' : "host",
   'user': "user",
-  'password':"password",
+  'password':"Password",
   'port':3306,
-  'database':"testDB"
+  'database':"bot_discord"
 }
 
 possibilites = {
@@ -44,3 +44,10 @@ helpmessage = '''
 
 #definie le statue d'un channel pour empecher de spam 2 fois en même temps dans un channel
 channel_status = {}
+
+#definie le statue d'un serveur pour savoir si le random join à été declanché
+guild_status = []
+
+#definie la liste des music joué et leur serveur
+
+musicQueue = {}

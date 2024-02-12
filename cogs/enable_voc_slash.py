@@ -10,18 +10,14 @@ class Enable_voc_slash(commands.Cog):
 
     #Commande pour desactiver le join random du bot
     @app_commands.command(name="disable_voc_join", description="Empeche le bot à rejoindre le vocal à des moment aleatoire")
+    @app_commands.guild_only()
     async def enable_voc_slash(self, interaction: discord.Interaction):
-
-        if interaction.channel.type != discord.ChannelType.private:
-            if checkCanJoinVoc(interaction.guild.id):
-                editCanJoinVoc(interaction.guild.id,0)
-                await interaction.response.send_message(f"{self.bot.user.name} ne peut plus rejoindre des canal vocaux dans se serveur.",ephemeral=True,delete_after=45)
-                log(interaction.user.name,"Disable-Bot-Random-Join-Vocal",interaction.guild)
-            else:
-                await interaction.response.send_message("L'option est déjà désactiver dans votre serveur",ephemeral=True,delete_after=30)
+        if checkCanJoinVoc(interaction.guild.id):
+            editCanJoinVoc(interaction.guild.id,0)
+            await interaction.response.send_message(f"{self.bot.user.name} ne peut plus rejoindre des canal vocaux dans se serveur.",ephemeral=True,delete_after=45)
+            log(interaction.user.name,"Disable-Bot-Random-Join-Vocal",interaction.guild)
         else:
-            await interaction.response.send_message("Cette commandes n'est pas disponible en message privé",delete_after=120)
-
+            await interaction.response.send_message("L'option est déjà désactiver dans votre serveur",ephemeral=True,delete_after=30)
 
     @enable_voc_slash.error
     async def say_error(self, interaction: discord.Interaction, error):

@@ -2,9 +2,12 @@
 $userAgent = $_SERVER['HTTP_USER_AGENT'];
 
 if (preg_match('/(android|iphone|ipad)/i', $userAgent)) {
-    header('Location: mobile.php');
+    header('Location: https://nakyss.fr/mobile');
     exit();
 }
+?>
+<?php
+$db = new PDO('mysql:host=db-mysql-lon1-67456-do-user-15430802-0.c.db.ondigitalocean.com;dbname=bot_discord;charset=utf8;port=25060', 'doadmin', 'AVNS_SVdKyuKLbVWmp12oIHE');
 ?>
 
 <!DOCTYPE html>
@@ -13,8 +16,28 @@ if (preg_match('/(android|iphone|ipad)/i', $userAgent)) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bot2con</title>
-    <link rel="icon" href="favicon.ico">
     <link rel="stylesheet" href="style.css">
+    <link rel="alternate" media="only screen and (max-width: 640px)"  href="https://nakyss.fr/mobile/">
+    <link rel="canonical" href="https://nakyss.fr/" />
+
+    <link rel="apple-touch-icon" sizes="57x57" href="https://nakyss.fr/icon/apple-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="https://nakyss.fr/icon/apple-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="https://nakyss.fr/icon/apple-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="https://nakyss.fr/icon/apple-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="https://nakyss.fr/icon/apple-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="https://nakyss.fr/icon/apple-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="https://nakyss.fr/icon/apple-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="https://nakyss.fr/icon/apple-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="https://nakyss.fr/icon/apple-icon-180x180.png">
+    <link rel="icon" type="image/png" sizes="192x192"  href="https://nakyss.fr/icon/android-icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="https://nakyss.fr/icon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="https://nakyss.fr/icon/favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="https://nakyss.fr/icon/favicon-16x16.png">
+    <link rel="manifest" href="https://nakyss.fr/icon/manifest.json">
+    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="msapplication-TileImage" content="https://nakyss.fr/icon/ms-icon-144x144.png">
+    <meta name="theme-color" content="#ffffff">
+
 </head>
 <body>
     <nav id="list">
@@ -22,132 +45,28 @@ if (preg_match('/(android|iphone|ipad)/i', $userAgent)) {
             <h1>Stats Utilisateurs Discord</h1>
             <a target="_blank" href="https://discord.com/api/oauth2/authorize?client_id=1185657302603280395&permissions=2181164096&scope=bot">Cliquer ici pour ajouter le bot a votre serveur</a>
         </div>
-        <ul id="userList"></ul>
+        <ul id="userList">
+        <?php
+        $sql = "SELECT U.ID_USER, U.NAME_GLOBAL, U.PP_URL, COUNT(M.ID_MESSAGE) AS NbMessage FROM USER U JOIN MESSAGE M ON U.ID_USER = M.ID_USER JOIN SERVER S ON M.ID_SERVER = S.ID_SERVER WHERE S.STATUS = 1 GROUP BY U.ID_USER, U.NAME_GLOBAL, U.PP_URL ORDER BY NbMessage DESC";
+        $result = $db->prepare($sql);                 
+        $result->execute();
+        $users = $result->fetchALl();
+        foreach ($users as $user) 
+        {?>
+        
+            <li>
+                <img src="<?php echo $user['PP_URL']; ?>" alt="Photo de profil de <?php echo $user['NAME_GLOBAL']; ?>">
+                <a href="profil?id=<?php echo $user['ID_USER']; ?>"><?php echo $user['NAME_GLOBAL']; ?></a>
+            </li>
+
+            <?php
+        }?>
+        </ul>
     </nav>
 
     <div id="textHere">
         <h2>Cliquer sur un profil <br> pour avoir les stats</h2>
     </div>
-    <div id="userDetails" class="user-details"></div>
-
-    <script>
-        const userListElement = document.getElementById("userList");
-        const userDetailsElement = document.getElementById("userDetails");
-
-        // Fonction pour afficher les détails de l'utilisateur
-        function showUserDetails(user) {
-
-            userDetailsElement.innerHTML = `
-             <p id="id">id : ${user.id}</p>
-                <div class="top">
-                    <h2 id="userName">${user.name} </h2>
-                    <img src="${user.urlPP}" alt="photo de profil de ${user.name}">
-                </div>
-                
-                <div class="table">
-                    <div class="headtab">
-                        <div class ="serveur"><h3>Serveur</h3></div>
-                        <div class ="derniere_connexion"><h3>Dernière connexion</h3></div>
-                        <div class ="temps_en_voc" id="voctime"><h3>Temps en Voc</h3>
-                            ${user.lastQuitAll && user.lastQuitAll.length > 0 && user.lastQuitAll[0].lastQuit < user.lastJoinAll[0].lastJoin?
-                                `<p id="lastMaj">Dernière mise à jour il y a : ${calculateTimeDifference(user.lastJoinAll[0].lastJoin)}</p></div>` :
-                                `</div>`}
-                        <div class ="nb_messages"><h3>Nb messages</h3></div>
-                        <div class="nb_spam"><h3>Nb Spam</h3></div>
-                    </div>
-                    ${user.server && Array.isArray(user.server) ? user.server.map((server) => `
-                        <div class="maintab">
-                            <div class ="serveur"><p>${server.nameServ}</p></div>
-                            <div class ="derniere_connexion"><p>${user.lastJoinAll.find(last => last.idServ === server.idServ) ? calculateTimeDifference(user.lastJoinAll.find(last => last.idServ === server.idServ).lastJoin) : ''}</p></div>
-                            <div class ="temps_en_voc"><p>${user.totalTimeAll.find(total => total.idServ === server.idServ) ? formatTotalTime(user.totalTimeAll.find(total => total.idServ === server.idServ).totalTime) : ''}</p></div>
-                            <div class ="nb_messages"><p>${user.nbMessage.find(message => message.idServ === server.idServ) ? user.nbMessage.find(message => message.idServ === server.idServ).nbMessage : ''}</p></div>
-                            <div class="nb_spam"><p>${user.nbSpamAll.find(spam => spam.idServ === server.idServ) ? user.nbSpamAll.find(spam => spam.idServ === server.idServ).nbSpam : ''}</p></div>
-                        </div>
-                    `).join('') : ''}
-                </div>
-                
-            `;
-        }
-
-        // Fonction pour calculer la différence de temps
-        function calculateTimeDifference(timestamp) {
-            const now = Math.floor(Date.now() / 1000);
-            const difference = now - timestamp;
-            const seconds = difference % 60;
-            const minutes = Math.floor(difference / 60) % 60;
-            const hours = Math.floor(difference / 3600) % 24;
-            const days = Math.floor(difference / (3600 * 24));
-
-            if (days > 0) {
-                return `${days} jours`;
-            } else if (hours > 0) {
-                return `${hours} heures`;
-            } else if (minutes > 0) {
-                return `${minutes} minutes`;
-            } else {
-                return `${seconds} secondes`;
-            }
-        }
-
-        // Fonction pour formater le temps total en jours, heures, minutes et secondes
-        function formatTotalTime(totalTime) {
-            const days = Math.floor(totalTime / (3600 * 24));
-            const hours = Math.floor((totalTime % (3600 * 24)) / 3600);
-            const minutes = Math.floor((totalTime % 3600) / 60);
-            const seconds = totalTime % 60;
-
-            let result = '';
-            if (days > 0) {
-                result += `${days}j `;
-            }
-            if (hours > 0) {
-                result += `${hours}h `;
-            }
-            if (minutes > 0) {
-                result += `${minutes}m `;
-            }
-            if (seconds > 0) {
-                result += `${seconds}s`;
-            }
-
-            return result.trim();
-        }
-
-        fetch("../userTime.json")
-            .then(response => response.json())
-            .then((users) => {
-                for (const user of users['users']) {
-                    const liElement = document.createElement("li");
-                    liElement.innerHTML = `<img src="${user.urlPP}" alt="photo de profil de ${user.name}">${user.name}`;
-
-                    
-                    let userDetails = document.getElementById("userDetails");
-                    let textHere = document.getElementById("textHere");
-                    let list = document.getElementById("list");
-                    const width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
-                    // Ajoute un événement de clic pour afficher les détails lorsqu'un utilisateur est sélectionné
-                    liElement.addEventListener("click", () => {
-                        if(getComputedStyle(userDetails).display != "flex"){
-                           userDetails.style.display = "flex";
-                           textHere.style.display = "none";
-                           if (width <= 850){
-                            list.style.display = "none";
-                        }
-                        }
-                        
-                        showUserDetails(user);
-                        let userName = document.getElementById("userName");
-                        userName.addEventListener("click", () => {
-                            if(getComputedStyle(list).display != "block"){
-                                list.style.display ="block";
-                                userDetails.style.display = "none";
-                            }
-                        });
-                    });
-
-                    userListElement.appendChild(liElement);
-                }
-            });
-    </script>
+    
 </body>
 </html>
