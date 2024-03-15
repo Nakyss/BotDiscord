@@ -24,9 +24,18 @@ class Join_leave_voice_channel(commands.Cog):
             f.newVocalSession(member)
 
             if not member.guild.id in v.guild_status:
-                if f.checkCanJoinVoc(member.guild.id):
-                    v.guild_status.append(member.guild.id)
-                    await f.randomJoin(self.bot,member.guild)
+                if member.guild.id in v.cantJoin:
+                    if v.cantJoin[member.guild.id] <= f.getTime():
+                        del v.cantJoin[member.guild.id]
+
+                if not member.guild.id in v.cantJoin:
+                    if f.checkCanJoinVoc(member.guild.id):
+                        v.guild_status.append(member.guild.id)
+                        await f.randomJoin(self.bot,member.guild)
+                    else:
+                        v.cantJoin[member.guild.id] = f.getTime()+10800
+            
+                
 
 
         #verifie si le membre a quitte le canal

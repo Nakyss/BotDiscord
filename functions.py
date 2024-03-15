@@ -9,6 +9,8 @@ import shutil
 import discord
 from random import randint,random
 import asyncio
+import mutagen
+from mutagen.mp3 import MP3
 from variable import mydb
 import variable as v
 from yt_dlp import YoutubeDL
@@ -393,7 +395,42 @@ def editCanJoinVoc(guildId,statut):
 
 #--playSong-------
 
-async def playSong(interaction,vc):
+def audioDuration(length):
+    hours = length // 3600  # calculate in hours
+    length %= 3600
+    mins = length // 60  # calculate in minutes
+    length %= 60
+    seconds = length  # calculate in seconds
+    
+    result = ""
+
+    if hours != 0:
+        result += f'{hours}:'
+    
+    if mins < 10:
+        if mins == 0:
+            result += "00:"
+        else:
+            result += f'0{mins}:'
+    else:
+        result += f"{mins}:"
+
+    if seconds < 10:
+        if seconds == 0:
+            result += "00"
+        else:
+            result += f'0{seconds}'
+    else:
+        result += f'{seconds}'
+
+    return result  # returns the duration
+
+def getAudioDuration(audio):
+    audio = MP3(audio)
+    return int(audio.info.length)
+
+async def playSong(interaction):
+    vc = v.voiceClient[interaction.guild.id][0]
     while len(v.musicQueue[interaction.guild.id]):   #boucle tant que la liste n'est pas vide
         if not vc.is_connected():
             del v.musicQueue[interaction.guild.id]
@@ -402,58 +439,40 @@ async def playSong(interaction,vc):
             del v.musicQueue[interaction.guild.id]
             return
         
+        volume = v.musicQueue[interaction.guild.id][0]['volume'] / 100
+
         if v.musicQueue[interaction.guild.id][0]['source'].startswith("https://"):    #Lance le son si il s'agit d'une video youtube
+
             data = ytdl.extract_info(v.musicQueue[interaction.guild.id][0]['source'], download=False)
             song = data['url']
             log(interaction.user.name,f"Play-{v.musicQueue[interaction.guild.id][0]['title']}",f"{vc.channel.name} / {interaction.guild.name}")
-            vc.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(song, before_options = "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5"),0.3))
+            vc.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(song, before_options = "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5"),0.1*volume))
         else:
             if not v.musicQueue[interaction.guild.id][0]['source'].endswith(".mp3"):   #Lance le son si il s'agit d'un son du serveur
                     v.musicQueue[interaction.guild.id][0]['source'] += ".mp3"
             log(interaction.user.name,f"Play-{v.musicQueue[interaction.guild.id][0]['title']}",f"{vc.channel.name} / {interaction.guild.name}")
-            vc.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(v.musicQueue[interaction.guild.id][0]['source']),0.85))
+            vc.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(v.musicQueue[interaction.guild.id][0]['source']),0.65*volume))
 
-        while vc.is_playing():
+        v.voiceClient[interaction.guild.id][1] = getTime()
+        while vc.is_playing() and vc.is_connected():
             await asyncio.sleep(1)
         v.musicQueue[interaction.guild.id].pop(0) #enleve le son de la liste a la fin du son
-
+    vc.cleanup()
     await vc.disconnect()
+    del v.voiceClient[interaction.guild.id]
     del v.musicQueue[interaction.guild.id]
 
-async def newJoin(son,interaction):
-    if interaction.user.voice == None:
-        await interaction.response.send_message("Vous n'etes pas connecté dans un canal vocal",ephemeral=True,delete_after=30)
-        return
-    
+def getSong(son,interaction,volume):
     if son.startswith("https://"):
-        title = ytdl.extract_info(son, download=False)['title']
-        song = {'source':son, 'title':title}
+        data = ytdl.extract_info(son, download=False)
+        song = {'source':son, 'title':data['title'], 'volume':volume, 'duration': data['duration']}
 
     elif os.path.exists(f"botSound/{interaction.guild.id}/{son}.mp3"):
-        song = {'source':f"botSound/{interaction.guild.id}/{son}.mp3", 'title':son}
+        song = {'source':f"botSound/{interaction.guild.id}/{son}.mp3", 'title':son, 'volume':volume, 'duration': getAudioDuration(f"botSound/{interaction.guild.id}/{son}.mp3")}
         
     else:
         search = VideosSearch(son, limit=1)
-        song = {'source':search.result()["result"][0]["link"], 'title':search.result()["result"][0]["title"]}
-    
-    await interaction.response.send_message(f"Lancement de **'{song['title']}'**",ephemeral=True,delete_after=30)
-    v.musicQueue[interaction.guild.id] = [song]
-    voice_channel = interaction.user.voice.channel
+        song = {'source':search.result()["result"][0]["link"], 'title':search.result()["result"][0]["title"], 'volume':volume, 'duration':ytdl.extract_info(search.result()["result"][0]["link"], download=False)['duration']}
 
-    vc = await voice_channel.connect()
-    await playSong(interaction,vc)
+    return song
 
-async def addSong(son,interaction):
-    if son.startswith("https://"):
-        title = ytdl.extract_info(son, download=False)['title']
-        song = {'source':son, 'title':title}
-    
-    elif os.path.exists(f"botSound/{interaction.guild.id}/{son}"):
-        song = {'source':f"botSound/{interaction.guild.id}/{son}", 'title':son}
-
-    else:
-        search = VideosSearch(son, limit=1)
-        song = {'source':search.result()["result"][0]["link"], 'title':search.result()["result"][0]["title"]}
-    
-    v.musicQueue[interaction.guild.id].append(song)
-    await interaction.response.send_message(f"Ajout de **'{song['title']}'** en {len(v.musicQueue[interaction.guild.id])} eme position de la liste",ephemeral=True,delete_after=30)

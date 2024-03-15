@@ -33,13 +33,18 @@ pv_mess_possibilities = [
 
 helpmessage = '''
 - Le bot peut spam un message dans un channel. Il suffit d'envoyer spam 10 messages pour qu'il envoie 10x "message"
-- Enregistrement de certaines données pour avoir des stats, retrouvable sur https://nakyss.fr/ 
+- Enregistrement de certaines données pour avoir des stats, retrouvable sur https://nakyss.fr/
+- Le bot peut joué des sons/ musiques 
 - Le bot peut rejoindre à des moment aleatoire un channel vocal dans votre serveur et y jouer des sons choisis parmit une liste que vous gerer.
   - /enable_voc_join  Pour activer la fonctions
   - /disable_voc_join  Pour desactiver la fonctions
   - /list_sound  Affiche tout les sons disponible pour votre serveur
   - /add_sound   Ajouter un sons à la liste
   - /del_sound   supprime un son
+  - /play  Joue un son, au choix parmit ceux proposé ou avec un lien youtube ou un titre de video, possibilité d'entrée le volume du média
+  - /skip  Passe au son suivant dans le liste
+  - /stop  Arrete la musique et deconnecte le bot
+  - /display_queue  Affiche la musique actuellement joué et les suivante
 '''
 
 #definie le statue d'un channel pour empecher de spam 2 fois en même temps dans un channel
@@ -51,3 +56,8 @@ guild_status = []
 #definie la liste des music joué et leur serveur
 
 musicQueue = {}
+
+voiceClient = {}
+
+
+cantJoin = {}
