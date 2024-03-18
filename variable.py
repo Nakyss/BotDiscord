@@ -1,3 +1,4 @@
+#info connexion base de données
 mydb = {
   'host' : "host",
   'user': "user",
@@ -6,6 +7,7 @@ mydb = {
   'database':"bot_discord"
 }
 
+#possibilité de reponse au message finissant comme suivant:
 possibilites = {
     "quoi": ["feur", "chi", "driceps","quoicoubeh"],
     "oui": ["stiti", "ghours"],
@@ -20,7 +22,7 @@ possibilites = {
     "kwa": ["feur", "chi", "driceps","quoicoubeh"]
 }
 
-
+#tableau des messages à envoyé en message pv si on envoie un message au bot
 pv_mess_possibilities = [
     "Ahoy! Les messages privés sont comme une boîte de chocolats, on sait jamais sur quoi on va tomber.",
     "Oh, un aventurier des messages privés! Quelle quête t'amène par ici?",
@@ -31,6 +33,7 @@ pv_mess_possibilities = [
     "Ah, la voie secrète des messages privés s'ouvre devant toi! Quel est ton mot de passe?"]
 
 
+#liste des fonctionnalité du bot
 helpmessage = '''
 - Le bot peut spam un message dans un channel. Il suffit d'envoyer spam 10 messages pour qu'il envoie 10x "message"
 - Enregistrement de certaines données pour avoir des stats, retrouvable sur https://nakyss.fr/
@@ -54,10 +57,9 @@ channel_status = {}
 guild_status = []
 
 #definie la liste des music joué et leur serveur
-
 musicQueue = {}
 
 voiceClient = {}
 
-
+#Liste des serveur ou le bot ne peut pas rejoindre le voc(evite de faire une requette BD à chaque fois que quelqu'un rejoint un vocal)
 cantJoin = {}

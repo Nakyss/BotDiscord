@@ -9,7 +9,6 @@ import shutil
 import discord
 from random import randint,random
 import asyncio
-import mutagen
 from mutagen.mp3 import MP3
 from variable import mydb
 import variable as v
@@ -19,24 +18,28 @@ from youtubesearchpython import VideosSearch
 YDL_OPTIONS = {'format': 'bestaudio/best', 'noplaylist': 'True'}
 ytdl = YoutubeDL(YDL_OPTIONS)
 
+def retirer_points(message:str):
+    """Enlever la ponctuation d'un message"""
 
-def retirer_points(message):
     caracteres = "!? ."
     message = message.lower()
     for x in range(len(caracteres)):
         message = message.replace(caracteres[x],"")
     return message
 
-def procedNb(nbRep):
+def procedNb(nbRep:str):
+    """Transforme un str en chiffre en enlevant tout ce qui n'est pas un chiffre"""
+
     chiffre = re.sub(r'\D', '',nbRep)
 
     if (chiffre == ''):
         chiffre = '10'
-
     chiffre = int(chiffre)
     return chiffre
 
-def cutMessage(message):
+def cutMessage(message:str):
+    """Coupe le message et renvoie un tableau avec le contenue et le nombre de repetition """
+
     #ajoute 2 espace apres les message dans le cas ou il n'y a pas d'espace pour que le split marche
     message += '  '
 
@@ -48,21 +51,28 @@ def cutMessage(message):
     if (splited[2] == '' or splited[2].startswith(' ')):
         splited[2] = "OUAIS OUAIS OUAIS"
     else:
+        #enleve les suites d'espace 
         splited[2] = splited[2].strip()
 
     splited[1] = procedNb(splited[1])
 
     return splited
 
-def calculNbMess(message,nbRep):
+def calculNbMess(message:str,nbRep:int):
+    """Retourne un tableau avec le nombre de message à envoyé, le nombre de rep dans les n-1 message et le nombre de rep dans le dernier."""
 
     tab=[5,0,0]
 
+    #Nombre de fois le message à spam par message envoyé
     nbByMess = nbRep//5
+
+    #Nombre de fois le message à spam pour le dernier message à envoyé
     lastMess = nbRep%5
 
+    #Nombre de caractères par message envoyé.
     nbChar = (len(message)+1)*nbByMess
 
+    #ça je l'ai fait mais j'ai aucune idée comment ça marche 
     if (nbChar > 2000):
         nbByMess = 2000 / int(len(message)+1)
         nbByMess=int(nbByMess)
@@ -80,10 +90,12 @@ def calculNbMess(message,nbRep):
     return tab
 
 def readToken(emplacement = "token_discord.txt"):
+    """Retourne le token ou n'importe quel texte entrée en première ligne d'un fichier txt"""
     fichier = open(emplacement, 'r')
     return(fichier.readline())
 
 def getTime():
+    """Retourne le timestamp de la date, heure actuel"""
     # Getting the current date and time
     dt = datetime.now()
 
@@ -93,6 +105,7 @@ def getTime():
     return int(ts)
 
 def getTimeV2():
+    """Retourne l'heure et la date au format DD-MM-YYYY HH:mm:SS"""
     # Obtenez le fuseau horaire de Paris
     paris_tz = pytz.timezone('Europe/Paris')
 
@@ -106,6 +119,7 @@ def getTimeV2():
     return paris_now.strftime("%d-%m-%y %H:%M:%S")
 
 def log(user,action,place):
+    """Ajoute des infos log dans le fichier logs.csv"""
     time = getTimeV2()
     print(f"{time} - {user} - {action} in {place}")
     
@@ -114,12 +128,15 @@ def log(user,action,place):
         writer.writerow([time,user,action,place])
 
 def clearQuotes(message):
+    """ajoute des backslash devant les ' pour eviter les probleme avec SQL"""
     return message.replace("'","\\'")
 
 def clearBackslashN(message):
+    """ajoute un backslash devant les \n pour eviter les probleme avec SQL"""
     return message.replace("\n","\\n ")
 
 def folderExist (nameDirectory,nameFolder):
+    """Retourne si un dossier existe"""
     directory = os.listdir(nameDirectory)
 
     for folder in directory:
@@ -128,11 +145,12 @@ def folderExist (nameDirectory,nameFolder):
     return False
 
 def createFolder(name,directory):
+    """Créer un dossier un ajoute le fichier PROUT.mp3 dedans"""
     os.makedirs(f"{directory}/{name}")
     shutil.copy(f"{directory}/PROUT.mp3",f"{directory}/{name}/")
 
-
 def maxUser(voice_channel):
+    """retourne le channel vocal avec le plus de personne connecté parmis tout les channel vocal du serveur"""
     lenMaxChannel = 0
     maxChannel = ()
     for channel in voice_channel:
@@ -142,6 +160,7 @@ def maxUser(voice_channel):
     return maxChannel
     
 def getAllSong(interaction):
+        """Retourne un tableau avec tout les sons(fichier) dans un dossier donné"""
         choice = []
         if folderExist("botSound",f"{interaction.guild.id}"):
                 listSound = os.listdir(f"botSound/{interaction.guild.id}")
@@ -153,9 +172,11 @@ def getAllSong(interaction):
         return choice
 
 def isInVoiceChannel(client,guild):
+    """Retourne si le client est dans un channel vocal dans le serveur""" 
     voiceClient = client.voice_clients
     if len(voiceClient) == 0:
         return False
+    
     for client in voiceClient:
         if client.guild.id == guild.id:
             return True
@@ -463,13 +484,16 @@ async def playSong(interaction):
     del v.musicQueue[interaction.guild.id]
 
 def getSong(son,interaction,volume):
+    #pour un url recuperer la video
     if son.startswith("https://"):
         data = ytdl.extract_info(son, download=False)
         song = {'source':son, 'title':data['title'], 'volume':volume, 'duration': data['duration']}
 
+    #si c'est pas un url verifie si le son existe dans les fichier du bot
     elif os.path.exists(f"botSound/{interaction.guild.id}/{son}.mp3"):
         song = {'source':f"botSound/{interaction.guild.id}/{son}.mp3", 'title':son, 'volume':volume, 'duration': getAudioDuration(f"botSound/{interaction.guild.id}/{son}.mp3")}
-        
+    
+    #si c'est pas dans les fichier du bot alors faire un recherche youtube
     else:
         search = VideosSearch(son, limit=1)
         song = {'source':search.result()["result"][0]["link"], 'title':search.result()["result"][0]["title"], 'volume':volume, 'duration':ytdl.extract_info(search.result()["result"][0]["link"], download=False)['duration']}
