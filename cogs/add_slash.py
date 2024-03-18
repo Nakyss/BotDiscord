@@ -3,7 +3,7 @@ from discord import app_commands
 from discord.ext import commands
 import os
 
-MAX = 50
+MAX = 25
 
 class Add_slash(commands.Cog):
     def __init__(self, bot):
