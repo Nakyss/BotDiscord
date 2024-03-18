@@ -3,7 +3,7 @@ from discord import app_commands
 from discord.ext import commands
 import os
 
-MAX = 25
+MAX = 50
 
 class Add_slash(commands.Cog):
     def __init__(self, bot):
@@ -19,8 +19,9 @@ class Add_slash(commands.Cog):
                 await interaction.response.send_message(f"La limite de {MAX} fichiers à été atteinte",ephemeral=True,delete_after=30)
                 return
             name = fichier.filename
-            name = name.replace("_",'-')    #les '_' change l'affichage dans discord donc pour eviter des problèmes d'affichage 
+               #les '_' change l'affichage dans discord donc pour eviter des problèmes d'affichage 
             await fichier.save(f"botSound/{interaction.guild.id}/{name}")
+            name = name.replace("_",'\_') 
             await interaction.response.send_message(f"{name} bien enregistré",ephemeral=True,delete_after=30)
         else:
             await interaction.response.send_message("Envoyer seulement des fichier au format .mp3",ephemeral=True,delete_after=30)

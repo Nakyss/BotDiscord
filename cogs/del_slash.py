@@ -29,8 +29,10 @@ class Del_slash(commands.Cog):
             fichier += ".mp3"              #ajoute .mp3 on nom du fichier a supprimé
         if os.path.exists(f"botSound/{interaction.guild.id}/{fichier}"):
             os.remove(f"botSound/{interaction.guild.id}/{fichier}")
+            fichier = fichier.replace("_",'\_') 
             await interaction.response.send_message(f"{fichier} à été supprimé",ephemeral=True,delete_after=30)
         else:
+            fichier = fichier.replace("_",'\_') 
             await interaction.response.send_message(f"{fichier} est introuvable",ephemeral=True,delete_after=30)
         
 

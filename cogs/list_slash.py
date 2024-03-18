@@ -18,7 +18,8 @@ class List_slash(commands.Cog):
 
             displayList = ""
             for i in range(len(listSound)):
-                displayList += f"{listSound[i].replace('.mp3','')}\n"   #enleve le .mp3 a la fin du fichier et l'ajoute au message
+                nameSong = listSound[i][:-4].replace("_",'\_') 
+                displayList += f"\n{nameSong}"   #enleve le .mp3 a la fin du fichier et l'ajoute au message
             await interaction.response.send_message(displayList,ephemeral=True,delete_after=300)
         else: 
             await interaction.response.send_message("L'option n'est pas activé sur votre serveur",ephemeral=True,delete_after=30)
