@@ -3,7 +3,8 @@ import functions as f
 import adminFunction
 from discord.ext import commands
 from random import randint
-from variable import pv_mess_possibilities,channel_status,possibilites
+from variable import pv_mess_possibilities,channel_status,possibilites,mydb
+import mysql.connector
 
 class MessageCog(commands.Cog):
     def __init__(self, bot):
@@ -30,8 +31,8 @@ class MessageCog(commands.Cog):
                 return
 
 
-        #--Si c'est un message de bienvenue----
-        if message.type == discord.MessageType.new_member:
+        #--Si c'est un message system----
+        if message.is_system():
             return
         
 
@@ -60,20 +61,30 @@ class MessageCog(commands.Cog):
 
             # Marque le canal comme occupé
             channel_status[message.channel.id] = True
+            
+            #connexion db
+            f.deleteLastSpam(message.channel)
+            db = mysql.connector.connect(**mydb)
+            cursor = db.cursor()
 
             #si plus de 2000 rep pas faire 
             if (nbRep >2000):
                 f.log(message.author,f"Send-4-'{f.clearBackslashN(messSpam)}'",f"{message.guild.name} / {message.channel.name}")
 
                 await message.channel.send("frero abuse, dose un peu")
+                await f.saveSpamMessage(message,cursor,db)
 
                 for i in range(4):
                     await message.channel.send(messSpam)
+                    await f.saveSpamMessage(message,cursor,db)
                 await message.channel.send("4 fois c'est deja pas mal")
+                await f.saveSpamMessage(message,cursor,db)
 
                 f.newSpam(message,4,messSpam)  #add to db
                 
                 channel_status[message.channel.id] = False
+                cursor.close()
+                db.close()
                 return
             
             f.log(message.author,f"Send-{nbRep}-'{f.clearBackslashN(messSpam)}'",f"{message.guild.name} / {message.channel.name}")
@@ -83,20 +94,27 @@ class MessageCog(commands.Cog):
             # si plus de 6 rep repartir les rep dans plusieur messages
             if (nbRep > 6 ):
                 tab = f.calculNbMess(messSpam,nbRep)
+
+                
                 
                 for i in range (tab[0]):
                     await message.channel.send((messSpam+"\n")*tab[1])
+                    await f.saveSpamMessage(message,cursor,db)
                 if (tab[2] != 0):
                     await message.channel.send((cutedContent[2]+"\n")*tab[2])
+                    await f.saveSpamMessage(message,cursor,db)
                 
             elif(nbRep > 0):
             #envoie nbRep fois le messages
                 for i in range (nbRep):
                     await message.channel.send(messSpam)
+                    await f.saveSpamMessage(message,cursor,db)
 
             else:
                 await message.channel.send("Pourquoi faire ?")
 
+            cursor.close()
+            db.close()
             channel_status[message.channel.id] = False
             return
         else:

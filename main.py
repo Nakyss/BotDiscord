@@ -27,6 +27,8 @@ async def on_ready():
     except Exception as e:
         print(e)
 
+    game = discord.Game("Pignouf")
+    await bot.change_presence(activity=game)
 
 
             

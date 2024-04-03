@@ -20,7 +20,7 @@ class Del_slash(commands.Cog):
         ]
 
     #Commande pour supprimé des fichier dans la liste
-    @app_commands.command(name="del_sound", description="Supprime des sons à pour le bot dans votre serveur")
+    @app_commands.command(name="delete_sound", description="Supprime des sons à pour le bot dans votre serveur")
     @app_commands.guild_only()   
     @app_commands.autocomplete(fichier=del_autocomplete)
     @app_commands.describe(fichier='Nom du fichier à supprimer') 

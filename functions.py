@@ -231,6 +231,17 @@ async def randomJoin(bot,guild):
                     del(v.guild_status[i])
                     return
 
+def deleteLastSpam(channel):
+    with mysql.connector.connect(**mydb) as db :
+        with db.cursor() as c:
+            c.execute(f"DELETE FROM LAST_SPAM WHERE ID_CHANNEL = {channel.id};")
+            db.commit()
+
+async def saveSpamMessage(message,c,db):
+    async for newMessage in message.channel.history(limit=1):
+        c.execute(f"INSERT INTO LAST_SPAM (ID_SPAM , ID_CHANNEL, ID_MESSAGE ) VALUES ({message.id} ,{message.channel.id}, {newMessage.id})")
+        db.commit()
+
 #------------------------------------------functions for Data-Base-------------------------------------------------
 def isServerExist(guild):
     with mysql.connector.connect(**mydb) as db :
@@ -466,12 +477,12 @@ async def playSong(interaction):
 
             data = ytdl.extract_info(v.musicQueue[interaction.guild.id][0]['source'], download=False)
             song = data['url']
-            log(interaction.user.name,f"Play-{v.musicQueue[interaction.guild.id][0]['title']}",f"{vc.channel.name} / {interaction.guild.name}")
-            vc.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(song, before_options = "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5"),0.1*volume))
+            log(interaction.user.name,f"Play-{v.musicQueue[interaction.guild.id][0]['title']}",f"{interaction.guild.name} / {vc.channel.name}")
+            vc.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(song, before_options = "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5"),0.15*volume))
         else:
             if not v.musicQueue[interaction.guild.id][0]['source'].endswith(".mp3"):   #Lance le son si il s'agit d'un son du serveur
                     v.musicQueue[interaction.guild.id][0]['source'] += ".mp3"
-            log(interaction.user.name,f"Play-{v.musicQueue[interaction.guild.id][0]['title']}",f"{vc.channel.name} / {interaction.guild.name}")
+            log(interaction.user.name,f"Play-{v.musicQueue[interaction.guild.id][0]['title']}",f"{interaction.guild.name} / {vc.channel.name}")
             vc.play(discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(v.musicQueue[interaction.guild.id][0]['source']),0.65*volume))
 
         v.voiceClient[interaction.guild.id][1] = getTime()
