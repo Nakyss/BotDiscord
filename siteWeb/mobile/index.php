@@ -5,7 +5,7 @@ if (!preg_match('/(android|iphone|ipad)/i', $userAgent) && !preg_match('/(mobile
     header('Location: https://nakyss.fr/');
     exit();
 }
-$db = new PDO('mysql:host=host;dbname=bot_discord;charset=utf8;port=3306', 'user', 'password');
+$db = new PDO('mysql:host=host;dbname=bot_discord;charset=utf8;port=3600', 'user', 'passwd');
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -46,7 +46,12 @@ $db = new PDO('mysql:host=host;dbname=bot_discord;charset=utf8;port=3306', 'user
     </header>
 
     <ul id="userList"><?php
-    $sql = "SELECT U.ID_USER, U.NAME_GLOBAL, U.PP_URL, COUNT(M.ID_MESSAGE) AS NbMessage FROM USER U JOIN MESSAGE M ON U.ID_USER = M.ID_USER JOIN SERVER S ON M.ID_SERVER = S.ID_SERVER WHERE S.STATUS = 1 GROUP BY U.ID_USER, U.NAME_GLOBAL, U.PP_URL ORDER BY NbMessage DESC";
+    $sql = 'SELECT U.ID_USER, U.NAME_GLOBAL, U.PP_URL,
+    ((SELECT COALESCE(COUNT(*), 0) FROM MESSAGE M JOIN SERVER S ON M.ID_SERVER = S.ID_SERVER WHERE M.ID_USER = U.ID_USER AND S.STATUS = 1)*350+
+    (SELECT COALESCE(SUM(VC.TIME_VOC), 0) FROM VOCAL_SESSION VC JOIN SERVER S ON VC.ID_SERVER = S.ID_SERVER WHERE VC.ID_USER = U.ID_USER AND S.STATUS = 1)+
+    (SELECT COALESCE(SUM(S.NB_REP), 0) FROM SPAM S JOIN SERVER SE ON SE.ID_SERVER = S.ID_SERVER WHERE S.ID_USER = U.ID_USER AND SE.STATUS = 1)*3) as result
+    FROM USER U 
+    ORDER BY result DESC;';
     $result = $db->prepare($sql);                 
     $result->execute();
     $users = $result->fetchALl();
@@ -55,7 +60,7 @@ $db = new PDO('mysql:host=host;dbname=bot_discord;charset=utf8;port=3306', 'user
         
     <li>
         <img src="<?php echo $user['PP_URL']; ?>" alt="Photo de profil de <?php echo $user['NAME_GLOBAL']; ?>">
-        <a href="profil?id=<?php echo $user['ID_USER']; ?>"><?php echo $user['NAME_GLOBAL']; ?></a>
+        <a href="https://nakyss.fr/profil?id=<?php echo $user['ID_USER']; ?>"><?php echo $user['NAME_GLOBAL']; ?></a>
     </li>
 
     <?php

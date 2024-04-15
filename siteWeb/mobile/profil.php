@@ -1,9 +1,10 @@
+
 <?php
 $userAgent = $_SERVER['HTTP_USER_AGENT'];
 
 if (htmlspecialchars($_GET['id']) ) {
     $id = $_GET['id'];
-    $db = new PDO('mysql:host=host;dbname=bot_discord;charset=utf8;port=3306', 'user', 'password');
+    $db = new PDO('mysql:host=host;dbname=bot_discord;charset=utf8;port=3600', 'user', 'passwd');
     $sql = "SELECT NAME_GLOBAL, PP_URL  FROM USER WHERE ID_USER = :id";
     $result = $db->prepare($sql);                 
     $result->bindParam(':id', $id, PDO::PARAM_INT);  
@@ -126,6 +127,7 @@ if (!preg_match('/(android|iphone|ipad)/i', $userAgent) && !preg_match('/(mobile
                 $result->bindParam(':id', $id, PDO::PARAM_INT);                     
                 $result->execute();
                 $servers = $result->fetchALl();
+                $timeVoc = 0; 
                 foreach ($servers as $server) 
                 {
                     $sql = "SELECT `JOIN` FROM VOCAL_SESSION WHERE ID_SERVER = :ids AND ID_USER = :id ORDER BY `JOIN` DESC LIMIT 1";
@@ -140,7 +142,20 @@ if (!preg_match('/(android|iphone|ipad)/i', $userAgent) && !preg_match('/(mobile
                         <div class="left" id="serv1"><p><?php echo $server['NAME'] ?></p></div>
                         <div class="right" id="d1"><p>Il y a <?php echo calculateTimeDifference($join[0]['JOIN'])?></p></div>
                     </div>
-                    <?php 
+                    <?php
+                    // chemin d'accès à votre fichier JSON
+                    $file = '../userConnected'; 
+                    // mettre le contenu du fichier dans une variable
+                    $data = file_get_contents($file); 
+                    // décoder le flux JSON
+                    $obj = json_decode($data);
+                    if ($obj->$id != NULL)
+                    {
+                        if ($obj->$id[1] == $join[0]['JOIN'])
+                        {
+                            $timeVoc = [$server['ID_SERVER'] => time() - $obj->$id[1]];
+                        }
+                    }
                     }
                 } ?>
             </div>
@@ -150,6 +165,7 @@ if (!preg_match('/(android|iphone|ipad)/i', $userAgent) && !preg_match('/(mobile
                         <h3 class="empty"></h3>
                     </div>
                     <?php 
+                    
                 foreach ($servers as $server) 
                 {
                     $sql = "SELECT SUM(TIME_VOC) as TIME FROM VOCAL_SESSION WHERE ID_SERVER = :ids AND ID_USER = :id";
@@ -158,10 +174,17 @@ if (!preg_match('/(android|iphone|ipad)/i', $userAgent) && !preg_match('/(mobile
                     $result->bindParam(':ids', $server['ID_SERVER'], PDO::PARAM_INT);                      
                     $result->execute();
                     $time = $result->fetchAll();
+
+                    $totalTimeVoc = $time[0]['TIME'];
+
                     if ($time[0]['TIME'] != NULL){
+                        if ($timeVoc[$server['ID_SERVER']] != NULL)
+                        {
+                            $totalTimeVoc += $timeVoc[$server['ID_SERVER']];
+                        }
                     ?>
                     <div class="donnee">
-                        <div class="left" id="d2"><p><?php echo formatTotalTime($time[0]['TIME'])?></p></div>
+                        <div class="left" id="d2"><p><?php echo formatTotalTime($totalTimeVoc)?></p></div>
                         <div class="right" id="serv2"><p><?php echo $server['NAME'] ?></p></div>
                     </div>
                     <?php 

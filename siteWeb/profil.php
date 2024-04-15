@@ -4,7 +4,7 @@ $userAgent = $_SERVER['HTTP_USER_AGENT'];
 
 if (htmlspecialchars($_GET['id']) ) {
     $id = $_GET['id'];
-    $db = new PDO('mysql:host=host;dbname=bot_discord;charset=utf8;port=3306', 'user', 'password');
+    $db = new PDO('mysql:host=host;dbname=bot_discord;charset=utf8;port=3600', 'user', 'passwd');
     $sql = "SELECT NAME_GLOBAL FROM USER WHERE ID_USER = :id";
     $result = $db->prepare($sql);
     $result->bindParam(':id', $id, PDO::PARAM_INT);                   
@@ -109,7 +109,12 @@ function calculateTimeDifference($timestamp) {
         </div>
         <ul id="userList">
         <?php
-        $sql = "SELECT U.ID_USER, U.NAME_GLOBAL, U.PP_URL, COUNT(M.ID_MESSAGE) AS NbMessage FROM USER U JOIN MESSAGE M ON U.ID_USER = M.ID_USER JOIN SERVER S ON M.ID_SERVER = S.ID_SERVER WHERE S.STATUS = 1 GROUP BY U.ID_USER, U.NAME_GLOBAL, U.PP_URL ORDER BY NbMessage DESC";
+        $sql = 'SELECT U.ID_USER, U.NAME_GLOBAL, U.PP_URL,
+        ((SELECT COALESCE(COUNT(*), 0) FROM MESSAGE M JOIN SERVER S ON M.ID_SERVER = S.ID_SERVER WHERE M.ID_USER = U.ID_USER AND S.STATUS = 1)*350+
+        (SELECT COALESCE(SUM(VC.TIME_VOC), 0) FROM VOCAL_SESSION VC JOIN SERVER S ON VC.ID_SERVER = S.ID_SERVER WHERE VC.ID_USER = U.ID_USER AND S.STATUS = 1)+
+        (SELECT COALESCE(SUM(S.NB_REP), 0) FROM SPAM S JOIN SERVER SE ON SE.ID_SERVER = S.ID_SERVER WHERE S.ID_USER = U.ID_USER AND SE.STATUS = 1)*3) as result
+        FROM USER U 
+        ORDER BY result DESC;';
         $result = $db->prepare($sql);                 
         $result->execute();
         $users = $result->fetchALl();
@@ -118,7 +123,7 @@ function calculateTimeDifference($timestamp) {
         
             <li>
                 <img src="<?php echo $user['PP_URL']; ?>" alt="Photo de profil de <?php echo $user['NAME_GLOBAL']; ?>">
-                <a href="profil?id=<?php echo $user['ID_USER']; ?>"><?php echo $user['NAME_GLOBAL']; ?></a>
+                <a href="https://nakyss.fr/profil?id=<?php echo $user['ID_USER']; ?>"><?php echo $user['NAME_GLOBAL']; ?></a>
             </li>
 
             <?php
@@ -154,19 +159,41 @@ function calculateTimeDifference($timestamp) {
             $result->bindParam(':id', $id, PDO::PARAM_INT);                 
             $result->execute();
             $servers = $result->fetchALl();
+
+            // chemin d'accès à votre fichier JSON
+            $file = 'userConnected'; 
+            // mettre le contenu du fichier dans une variable
+            $data = file_get_contents($file); 
+            // décoder le flux JSON
+            $obj = json_decode($data); 
+
+
             foreach ($servers as $server) 
             {
-                $sql = "SELECT (SELECT SUM(TIME_VOC) FROM VOCAL_SESSION WHERE ID_USER = :id AND ID_SERVER = :ids) as TIME, (SELECT COUNT(*) FROM MESSAGE WHERE ID_USER = :id AND ID_SERVER = :ids) as MESSAGE_COUNT, (SELECT SUM(NB_REP) FROM SPAM WHERE ID_USER = :id AND ID_SERVER = :ids) as NB_REP_SUM, (SELECT `JOIN` FROM VOCAL_SESSION WHERE ID_USER = :id AND ID_SERVER = :ids ORDER BY `JOIN` DESC LIMIT 1) as LATEST_JOIN ORDER BY TIME DESC";
+                $sql = "SELECT (SELECT SUM(TIME_VOC) FROM VOCAL_SESSION WHERE ID_USER = :id AND ID_SERVER = :ids) as TIME, (SELECT COUNT(*) FROM MESSAGE WHERE ID_USER = :id AND ID_SERVER = :ids) as MESSAGE_COUNT, (SELECT COALESCE(SUM(NB_REP), 0) FROM SPAM WHERE ID_USER = :id AND ID_SERVER = :ids) as NB_REP_SUM, (SELECT `JOIN` FROM VOCAL_SESSION WHERE ID_USER = :id AND ID_SERVER = :ids ORDER BY `JOIN` DESC LIMIT 1) as LATEST_JOIN ORDER BY TIME DESC";
                 $result = $db->prepare($sql);
                 $result->bindParam(':id', $id, PDO::PARAM_INT);
                 $result->bindParam(':ids', $server['ID_SERVER'], PDO::PARAM_INT);                    
                 $result->execute();
-                $info = $result->fetchALl();?>
-            
+                $info = $result->fetchALl();
+                
+                $timeVoc = $info[0]['TIME'];
+
+                if ($obj->$id != NULL)
+                {
+                    if ($obj->$id[1] == $info[0]['LATEST_JOIN'])
+                    {
+                        $timeVoc += time() - $obj->$id[1];
+                    }
+                }
+                
+                ?>
+
+                
             <div class="maintab">
                 <div class ="serveur"><p><?php echo $server['NAME'] ?></p></div>
                 <div class ="derniere_connexion"><p><?php echo calculateTimeDifference($info[0]['LATEST_JOIN'])?></p></div>
-                <div class ="temps_en_voc"><p><?php echo formatTotalTime($info[0]['TIME'])?></p></div>
+                <div class ="temps_en_voc"><p><?php echo formatTotalTime($timeVoc)?></p></div>
                 <div class ="nb_messages"><p><?php echo $info[0]['MESSAGE_COUNT'] ?></p></div>
                 <div class="nb_spam"><p><?php echo $info[0]['NB_REP_SUM'] ?></p></div>
             </div>
