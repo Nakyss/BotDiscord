@@ -1,11 +1,7 @@
-#info connexion base de données
-mydb = {
-  'host' : "host",
-  'user': "user",
-  'password':"Password",
-  'port':3306,
-  'database':"bot_discord"
-}
+
+allServer = {}
+
+db = None
 
 #possibilité de reponse au message finissant comme suivant:
 possibilites = {
@@ -19,7 +15,9 @@ possibilites = {
     "kois": ["feur", "chi", "driceps","quoicoubeh"],
     "qoa": ["feur", "chi", "driceps","quoicoubeh"],
     "kwoi": ["feur", "chi", "driceps","quoicoubeh"],
-    "kwa": ["feur", "chi", "driceps","quoicoubeh"]
+    "kwa": ["feur", "chi", "driceps","quoicoubeh"],
+    "quipinta":["pine ta mère","pine ta soeur"],
+    "quitom":["tom père"]
 }
 
 #tableau des messages à envoyé en message pv si on envoie un message au bot
@@ -43,23 +41,14 @@ helpmessage = '''
   - /disable_voc_join  Pour desactiver la fonctions
   - /list_sound  Affiche tout les sons disponible pour votre serveur
   - /add_sound   Ajouter un sons à la liste
-  - /del_sound   supprime un son
+  - /delete_sound   supprime un son
   - /play  Joue un son, au choix parmit ceux proposé ou avec un lien youtube ou un titre de video, possibilité d'entrée le volume du média
   - /skip  Passe au son suivant dans le liste
   - /stop  Arrete la musique et deconnecte le bot
   - /display_queue  Affiche la musique actuellement joué et les suivante
+  - /stat  Envoie un lien vers vos statistiques
+  - /delete_last_spam  Supprime les messages du dernier spam envoyé dans le channel
 '''
 
-#definie le statue d'un channel pour empecher de spam 2 fois en même temps dans un channel
-channel_status = {}
 
-#definie le statue d'un serveur pour savoir si le random join à été declanché
-guild_status = []
 
-#definie la liste des music joué et leur serveur
-musicQueue = {}
-
-voiceClient = {}
-
-#Liste des serveur ou le bot ne peut pas rejoindre le voc(evite de faire une requette BD à chaque fois que quelqu'un rejoint un vocal)
-cantJoin = {}

@@ -1,19 +1,19 @@
 import discord
 from discord import app_commands
 from discord.ext import commands
-import functions
 from typing import List
-from variable import musicQueue,voiceClient
+from variable import allServer
 
 
-class Play_sound(commands.Cog):
+class Play(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
 
 
     async def play_autocomplete(self, interaction: discord.Interaction, current: str) -> List[app_commands.Choice[str]]:
-        choices = functions.getAllSong(interaction)
+        server = allServer[interaction.guild.id]
+        choices = server.getAllSong()
         return [
             app_commands.Choice(name=choice, value=choice)
             for choice in choices if current.lower() in choice.lower()
@@ -25,35 +25,42 @@ class Play_sound(commands.Cog):
     @app_commands.guild_only()
     @app_commands.autocomplete(son=play_autocomplete)
     @app_commands.describe(son='Un son parmi ceux proposés ou un lien ou titre de video youtube',volume='Le volume du media, 100 par defaut')
-    async def play_sound(self, interaction: discord.Interaction, son:str, volume:int=100):
+    async def play(self, interaction: discord.Interaction, son:str, volume:int=100):
         if interaction.user.voice != None:
-            song = functions.getSong(son,interaction,volume)
-
-            if interaction.guild.id in musicQueue:
-                if interaction.user.voice.channel != voiceClient[interaction.guild.id][0].channel:
+            server = allServer[interaction.guild.id]
+            if len(server.musicQueue):
+                if server.voiceClient != None and interaction.user.voice.channel != server.voiceClient.channel:
                     await interaction.response.send_message(f"Vous n'etes pas connecté dans le même canal vocal que {self.bot.user.name}",ephemeral=True,delete_after=30)
                     return
-                musicQueue[interaction.guild.id].append(song)
-                await interaction.response.send_message(f"Ajout de **'{song['title']}'** en {len(musicQueue[interaction.guild.id])} eme position de la liste",ephemeral=True,delete_after=40)
-
+                
+                await interaction.response.send_message(f"Veuillez patienter.....",ephemeral=True,delete_after=40)
+                song = server.getSong(son, volume)
+                server.musicQueue.append(song)
+                songName = song['title'].replace('_', '\\_')
+                await interaction.edit_original_response(content=f"Ajout de **'{songName}'** en {len(server.musicQueue)} eme position de la liste")
+                
             else:
-                await interaction.response.send_message(f"Lancement de **'{song['title']}'**",ephemeral=True,delete_after=40)
-                musicQueue[interaction.guild.id] = [song]
+                await interaction.response.send_message(f"Veuillez patienter.....",ephemeral=True,delete_after=40)
+                song = server.getSong(son, volume)
+                songName = song['title'].replace('_', '\\_')
+                await interaction.edit_original_response(content=f"Lancement de **'{songName}'**")
+                server.musicQueue = [song]
                 voice_channel = interaction.user.voice.channel
 
                 vc = await voice_channel.connect()
-                voiceClient[interaction.guild.id] = [vc,0]
-                await functions.playSong(interaction)
+                server.voiceClient = vc
+
+                await server.playSong(interaction)
         else:
             await interaction.response.send_message("Vous n'etes pas connecté dans un canal vocal",ephemeral=True,delete_after=30)
 
 
 
-    @play_sound.error
+    @play.error
     async def say_error(self, interaction: discord.Interaction, error):
         await interaction.response.send_message("Oups, une erreur est arrivé !!!!",ephemeral=True,delete_after=30)
         print(error)
 
 
 async def setup(bot):
-    await bot.add_cog(Play_sound(bot))
+    await bot.add_cog(Play(bot))

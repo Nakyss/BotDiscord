@@ -105,3 +105,7 @@ async def admin (bot,message):
             await message.reply(f"Synced {len(synced)} commands")
         except Exception as e:
             print(e)
+
+    elif message.content.lower() == "deco":
+        v.db.disconnect()
+        await message.reply("deco")
