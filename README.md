@@ -27,3 +27,25 @@ Il s'agit d'un bot discord avec plusieurs options.
 - HTML, CSS, JS, PHP `Site Web`
 - SQL `base de donnée`
 
+## Installer le Bot
+
+### Creation Base de données :
+Nous utilisons une base de donnée MySql   
+
+ - Crée une base de données avec un nom au choix
+ - Exécutée le fichier bd/bot_discord.sql ou son contenue dans votre base de données
+
+### Installation des librairies python
+Nous utilisont plusieurs librairies installez les avec les commandes suivantes:
+```
+pip install discord.py
+pip install python-dotenv
+pip install pytz
+pip install mutagen
+python -m pip install mysql-connector-python
+pip install yt-dlp
+pip install youtube-search-python
+````
+
+### Configuration
+Ouvrez le fichier .env et remplisser les variables avec les donnée pour votre bot
