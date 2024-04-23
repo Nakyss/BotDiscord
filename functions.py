@@ -4,7 +4,16 @@ import csv
 import os
 import shutil
 from mutagen.mp3 import MP3
+import json
 
+def openJson():
+    with open('actualSession.json', 'r') as rfile:
+        data = json.load(rfile)
+    return data
+
+def saveJson(data):
+    with open('actualSession.json', 'w') as wfile:
+        json.dump(data, wfile, indent=2)
 
 def removePunctuation(message:str):
     """Enlever la ponctuation d'un message"""
@@ -15,10 +24,6 @@ def removePunctuation(message:str):
         message = message.replace(caracteres[x],"")
     return message
 
-def readToken(emplacement = "TOKEN.txt"):
-    """Retourne le token ou n'importe quel texte entrée en première ligne d'un fichier txt"""
-    fichier = open(emplacement, 'r')
-    return(fichier.readline())
 
 def getTime():
     """Retourne le timestamp de la date, heure actuel"""
@@ -110,3 +115,44 @@ def audioDuration(length):
 def getAudioDuration(audio):
     audio = MP3(audio)
     return int(audio.info.length)
+
+def setMute(user_id):
+    data = openJson()
+
+    if f"{user_id}" in data:
+        if len(data[f"{user_id}"]) == 2:
+            data[f"{user_id}"].append(getTime())
+            data[f"{user_id}"].append(None)
+        else:
+            data[f"{user_id}"][2] = getTime()
+            data[f"{user_id}"][3] = None
+
+        saveJson(data)
+
+def setUnMute(user_id):
+    data = openJson()
+
+    if f"{user_id}" in data:
+       if len(data[f"{user_id}"]) == 4:
+        data[f"{user_id}"][3] = getTime()
+
+        saveJson(data)
+
+def format_total_time(total_time):
+    days = total_time // (3600 * 24)
+    hours = (total_time % (3600 * 24)) // 3600
+    minutes = (total_time % 3600) // 60
+    seconds = total_time % 60
+
+    result = ''
+    if days > 0:
+        result += str(days) + 'j '
+    if hours > 0:
+        result += str(hours) + 'h '
+    if minutes > 0:
+        result += str(minutes) + 'm '
+    if seconds > 0:
+        result += str(seconds) + 's'
+
+    return result.strip()
+

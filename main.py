@@ -1,10 +1,12 @@
 import discord
-from os import listdir
+from os import listdir, environ
 from discord.ext import commands
 from classServer import Server
 import variable as v
 from classDB import DB
-from functions import readToken
+from dotenv import load_dotenv
+
+load_dotenv('.env')
 
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix="/", intents=intents)
@@ -40,4 +42,4 @@ async def on_ready():
     await bot.change_presence(activity=game)
 
 
-bot.run(readToken("token_discord.txt"))
+bot.run(environ.get('DISCORD_BOT_TOKEN'))

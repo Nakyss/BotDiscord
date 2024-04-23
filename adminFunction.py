@@ -1,21 +1,17 @@
 import discord
+from variable import db
 import variable as v
-import mysql.connector
 import os
-
 
 
 async def admin (bot,message):
     #Envoie le fichier de log
-    if message.content.lower() == "log":
+    if message.content.lower()[4:] == "log":
         await message.channel.send(content="Voila le fichier logs",file=discord.File("logs.csv"))
 
     #Envoie une liste des serveurs
-    elif message.content.lower() == "server":
-        with mysql.connector.connect(**v.mydb) as db :
-            with db.cursor() as c:
-                c.execute(f"SELECT NAME, NB_USER, DATE_FORMAT(JOIN_DATE, '%e/%M/%Y'), CAN_JOIN_VOC, STATUS FROM SERVER")
-                result = c.fetchall()
+    elif message.content.lower()[4:] == "server":
+        result = db.executeSelect("SELECT NAME, NB_USER, DATE_FORMAT(JOIN_DATE, '%e/%M/%Y'), CAN_JOIN_VOC, STATUS FROM SERVER")
         sendableMesseage = '```'
         for serv in result:
             sendableMesseage += f'\n{serv[0]} -  {serv[1]} Utilisateurs  -  Depuis le {serv[2]}  -  Peut rejoindre le voc :{serv[3]}  -  Status : {serv[4]}'
@@ -23,11 +19,8 @@ async def admin (bot,message):
         await message.channel.send(sendableMesseage)
 
     #Envoie les infos des 10 dernier messages
-    elif message.content.lower() == "message":
-        with mysql.connector.connect(**v.mydb) as db :
-            with db.cursor() as c:
-                c.execute(f"SELECT U.NAME_GLOBAL, M.LENGTH, M.NB_ATTACHMEMTS, DATE_FORMAT(DATE, '%H:%i %e/%m/%Y') FROM MESSAGE M JOIN USER U ON U.ID_USER = M.ID_USER ORDER BY M.DATE DESC LIMIT 10")
-                result = c.fetchall()
+    elif message.content.lower()[4:] == "message":
+        result = db.executeSelect("SELECT U.NAME_GLOBAL, M.LENGTH, M.NB_ATTACHMEMTS, DATE_FORMAT(DATE, '%H:%i %e/%m/%Y') FROM MESSAGE M JOIN USER U ON U.ID_USER = M.ID_USER ORDER BY M.DATE DESC LIMIT 10")
         sendableMesseage = '```'
         for mess in result:
             sendableMesseage += f'\n{mess[0]} - {mess[1]} Caractères - {mess[2]} Fichier - {mess[3]} '
@@ -35,8 +28,8 @@ async def admin (bot,message):
         await message.channel.send(sendableMesseage)
     
     #Recharge un cog ou tous
-    elif message.content.lower().startswith("reload"):
-        if message.content.lower()=="reload all":
+    elif message.content.lower().startswith("cmd reload"):
+        if message.content.lower()=="cmd reload all":
             for filename in os.listdir("cogs"):
                 if filename.endswith(".py"):
                     if filename[:-3] not in ["view"]:
@@ -44,7 +37,8 @@ async def admin (bot,message):
                         print(f"Cogs chargé : {filename}")
             await message.reply(f"tout les cogs rechargé")
         else:
-            splited = message.content.split(' ')
+            content = message.content[4:]
+            splited = content.split(' ')
             cogs = os.listdir("cogs")
             if splited[1] in cogs:
                 await bot.reload_extension(f"cogs.{splited[1][:-3]}")
@@ -54,8 +48,9 @@ async def admin (bot,message):
                 await message.reply(f"{splited[1]} introuvable")
 
     #Charge un Cog
-    elif message.content.lower().startswith("load"):
-        splited = message.content.split(' ')
+    elif message.content.lower().startswith("cmd load"):
+        content = message.content[4:]
+        splited = content.split(' ')
         cogs = os.listdir("cogs")
         if splited[1] in cogs:
             await bot.load_extension(f"cogs.{splited[1][:-3]}")
@@ -65,18 +60,22 @@ async def admin (bot,message):
             await message.reply(f"{splited[1]} introuvable")
 
     #Affiche la liste des serveur avec le random join lancé
-    elif message.content.lower() == "random join":
-        if len(v.guild_status) != 0:
-            sendableMesseage = '```'
-            for serv in v.guild_status:
-                sendableMesseage += f'\n{serv}'
-            sendableMesseage += '\n```'
-            await message.channel.send(sendableMesseage)
-        else:
+    elif message.content.lower()[4:] == "random join":
+        sendableMesseage = '```'
+        nbServ = 0
+        for server in v.allServer:
+            if v.allServer[server].isRandomJoinActive:
+                nbServ +=1
+                sendableMesseage += f'{v.allServer[server].id}'
+        sendableMesseage += '\n```'
+
+        if nbServ == 0:
             await message.reply("Random join n'est actif sur aucun serveur")
+        else:
+            await message.channel.send(sendableMesseage)
 
     #Affiche la liste des cogs
-    elif message.content.lower() == "ls cogs":
+    elif message.content.lower()[4:] == "ls cogs":
         cogs = os.listdir("cogs")
         sendableMesseage = '```'
         for cog in cogs:
@@ -86,7 +85,7 @@ async def admin (bot,message):
         await message.channel.send(sendableMesseage)
 
     #Affiche la liste des possibilé de commande
-    elif message.content.lower() == "ls":
+    elif message.content.lower()[4:] == "ls":
         sendableMesseage = "```"
         sendableMesseage+= "log\n"
         sendableMesseage+= "server\n"
@@ -98,7 +97,7 @@ async def admin (bot,message):
         sendableMesseage+= "ls cogs ```"
         await message.reply(sendableMesseage)
 
-    elif message.content.lower() == "sync":
+    elif message.content.lower()[4:] == "sync":
         try:
             synced = await bot.tree.sync()
             print(f"Synced {len(synced)} commands")
@@ -106,6 +105,6 @@ async def admin (bot,message):
         except Exception as e:
             print(e)
 
-    elif message.content.lower() == "deco":
-        v.db.disconnect()
+    elif message.content.lower()[4:] == "deco":
+        db.disconnect()
         await message.reply("deco")

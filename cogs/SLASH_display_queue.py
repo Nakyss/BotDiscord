@@ -47,8 +47,8 @@ class Display_Queue(commands.Cog):
                         upadateEmbed.add_field(name=field.name, value=field.value, inline=field.inline)
 
                 else:
+                    embed.clear_fields()
                     if len(server.musicQueue) > 1 :
-                        embed.clear_fields()
                         embed.add_field(name="A venir", value="-----------------------------------------------------------------", inline=False)
                         for i in range (1,len(server.musicQueue)):
                             title = server.musicQueue[i]['title'].replace('_', '\\_')
@@ -59,7 +59,6 @@ class Display_Queue(commands.Cog):
                 await asyncio.sleep(1)
                 
             await interaction.delete_original_response()    
-        
         else:
             await interaction.response.send_message("Aucun élement dans la liste",ephemeral=True,delete_after=30)
         

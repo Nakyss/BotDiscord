@@ -31,6 +31,7 @@ class Enable_voc_join(commands.Cog):
     @enable_voc_join.error
     async def say_error(self, interaction: discord.Interaction, error):
         await interaction.response.send_message("Oups, une erreur est arrivé !!!!",ephemeral=True,delete_after=30)
+        print(error)
 
 
 async def setup(bot):

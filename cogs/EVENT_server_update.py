@@ -12,7 +12,7 @@ class Server_update(commands.Cog):
     @commands.Cog.listener()
     async def on_guild_join(self,guild):
         log(self.bot.user.name,"Added-to-server",guild.name)
-        if not db.isServerExist(guild):
+        if not db.isServerExist(guild.id):
             db.createServer(guild)
         else:
             db.updateServer(guild)
@@ -47,12 +47,13 @@ class Server_update(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_remove(self, member): 
-        log(member,"Left the server",member.guild.name)
-        db.deleteUser_Server(member.guild.id,member.id)
-        if db.isServerExist(member.guild.id):
-            db.updateServer(member.guild)
-        else:
-            db.createServer(member.guild)
+        if member != self.bot.user:
+            log(member,"Left the server",member.guild.name)
+            db.deleteUser_Server(member.guild.id,member.id)
+            if db.isServerExist(member.guild.id):
+                db.updateServer(member.guild)
+            else:
+                db.createServer(member.guild)
 
 
 

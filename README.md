@@ -17,24 +17,13 @@ Il s'agit d'un bot discord avec plusieurs options.
 - **Random Join**:
   - Le bot rejoint un canal vocal à des moment aleatoire si il y'a au moins une personnes connectée.
   - Il joue un son au hasard parmis les son du dossier `\botSound`, puis se deconnecte.
+- **Play**:
+  - Commande play pour lire un fichier audio du bot ou une le son du video youtube via un URL ou en tapant directement la recherche.
+- **Say To**
+  - Commande qui permet d'envoyer un message anonyme à quelqu'un via le bot, il a la possibilité de répondre mais ne sait pas a qui il parle.
 
 ## Language
 - Python `bot`
 - HTML, CSS, JS, PHP `Site Web`
 - SQL `base de donnée`
 
-## Info
-
-Le bot à sa base de données MySql il stocke un peu plus d'informations dans le but de pouvoir faire des stats plus precise 
-
-Ajout de 2 commandes pour activer/desactiver le bot qui rejoint aleatoirement
-
-Nouvelle commande pour ajouter/supprimé des sons pour le bot et afficher la liste
-
-implementation des cogs pour organisé le code
- - Possibilité de mettre un jour une partie du code avec un cog et de le recharger sans avoir à eteindre le bot et le relancer
-
-**a faire :** 
- - Peut être des amelioration pour que le code soit plus "flexible" et facilement adaptable 
- - Ajout de commentaire 
- - Optimisation

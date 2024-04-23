@@ -15,13 +15,14 @@ class Delete_last_spam(commands.Cog):
 
         result = db.getLastSpam(interaction.channel)
 
+        if not len(result):
+            await interaction.response.send_message("Aucun spam enregistré dans ce channel")
+            return
+
         if (interaction.user.id == result[0][2] or interaction.user.guild_permissions.administrator or interaction.user.guild_permissions.manage_messages):
             allMessage = []
 
-            if not len(result):
-                await interaction.response.send_message("Aucun spam enregistré dans ce channel")
-                return
-
+            
             allMessage.append(interaction.channel.get_partial_message(result[0][0]))
 
             for line in result:
@@ -40,10 +41,9 @@ class Delete_last_spam(commands.Cog):
 
         
 
-        
-
     @delete_last_spam.error
     async def say_error(self, interaction: discord.Interaction, error):
+        print(error)
         await interaction.response.send_message("Oups, une erreur est arrivé !!!!",ephemeral=True,delete_after=30)
 
 

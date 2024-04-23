@@ -39,6 +39,7 @@ class Delete_sound(commands.Cog):
 
     @delete_sound.error
     async def say_error(self, interaction: discord.Interaction, error):
+        print(error)
         await interaction.response.send_message("Oups, une erreur est arrivé !!!!",ephemeral=True,delete_after=30)
 
 

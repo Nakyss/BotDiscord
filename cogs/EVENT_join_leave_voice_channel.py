@@ -1,4 +1,4 @@
-from functions import log,getTime
+from functions import log,getTime,setMute,setUnMute
 from discord.ext import commands
 from variable import db,allServer
 
@@ -35,7 +35,6 @@ class Join_leave_voice_channel(commands.Cog):
                     else:
                         server.isRandomJoinDisable = True
                         server.lastActualisation = getTime()+10800
-            
                 
 
         #verifie si le membre a quitte le canal
@@ -43,6 +42,13 @@ class Join_leave_voice_channel(commands.Cog):
             log(member.name,"Left-Voice-Channel",f"{member.guild.name} / {before.channel.name}")
             db.closeVocalSession(member)
 
+        # mute
+        elif not before.self_mute and after.self_mute:
+            setMute(member.id)
+
+        # unmute
+        elif before.self_mute and not after.self_mute:
+            setUnMute(member.id)
             
 
 async def setup(bot):

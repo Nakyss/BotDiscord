@@ -1,15 +1,8 @@
 import mysql.connector
-from functions import getTime, getTimeV2
-import json
+from functions import getTime, getTimeV2,openJson,saveJson
+import os 
 
 class DB:
-    mydb = {
-    'host' : "host",
-    'user': "user",
-    'password':"paswd",
-    'port':3600,
-    'database':"DB"
-    }
     db = None
 
     def connect(self):
@@ -23,7 +16,14 @@ class DB:
         self.db.close()
         print(f"DB Disconnected : {self.mydb['database']}")
 
-    def __init__(self):
+    def __init__(self): 
+        self.mydb = {
+        'host' : os.environ.get('DISCORD_DB_HOST'),
+        'user': os.environ.get('DISCORD_DB_USER'),
+        'password':os.environ.get('DISCORD_DB_PASSWORD'),
+        'port':os.environ.get('DISCORD_DB_PORT'),
+        'database':os.environ.get('DISCORD_DB_DATABASE')
+        }
         self.connect()
         self.err_count = 0
 
@@ -247,13 +247,10 @@ class DB:
                 self.err_count = 0
         
             #--add the id of the session in a file
-            with open('actualSession.json', 'r') as rfile:
-                data = json.load(rfile)
-
+            data = openJson()
             data[member.id] = [id,join]
+            saveJson(data)
 
-            with open('actualSession.json', 'w') as wfile:
-                json.dump(data, wfile, indent=2)
         except mysql.connector.errors.OperationalError as err:
             self.err_count += 1
             if self.err_count <= 3:
@@ -266,8 +263,7 @@ class DB:
                 return False
 
     def closeVocalSession(self,member):
-        with open('actualSession.json', 'r') as rfile:
-            data = json.load(rfile)
+        data = openJson()
 
         #-check if the id exist else return bcs join wasn't save 
         if not f"{member.id}" in data:
@@ -281,8 +277,8 @@ class DB:
             self.err_count = 0
 
             del data[f'{member.id}']
-            with open('actualSession.json', 'w') as wfile:
-                json.dump(data, wfile, indent=2)
+            saveJson(data)
+
         except mysql.connector.errors.OperationalError as err:
             self.err_count += 1
             if self.err_count <= 3:
@@ -441,6 +437,58 @@ class DB:
                 self.deleteUser_Server(guildID, userID)
             else:
                 print("deleteUser_Server Stop")
+                return False
+
+    def executeSelect(self,request):
+        try:
+            with self.db.cursor() as c:
+                c.execute(request)
+                self.err_count = 0
+                return c.fetchall()
+        except mysql.connector.errors.OperationalError as err:
+            self.err_count += 1
+            if self.err_count <= 3:
+                print("SQL Erreur :", err)
+                self.disconnect()
+                self.connect()
+                return self.executeSelect(request)
+            else:
+                print("executeSelect Stop")
+                return False
+
+
+    def newSay_To(self,authorId,receiverId,message):
+        try:
+            with self.db.cursor() as c:
+                c.execute(f"INSERT INTO `SAY_TO` (`AUTHOR`, `RECEIVER`, `DATE`, `MESSAGE`) VALUES ({authorId}, {receiverId}, STR_TO_DATE('{getTimeV2()}','%d-%m-%y %H:%i:%S'), '{message}')")
+                self.db.commit()
+                self.err_count = 0
+        except mysql.connector.errors.OperationalError as err:
+            self.err_count += 1
+            if self.err_count <= 3:
+                print("SQL Erreur :", err)
+                self.disconnect()
+                self.connect()
+                return self.newSay_To(authorId,receiverId,message)
+            else:
+                print("newSay_To Stop")
+                return False
+    
+    def getSay_to(self,receiverId):
+        try:
+            with self.db.cursor() as c:
+                c.execute(f"SELECT AUTHOR FROM SAY_TO WHERE RECEIVER = {receiverId} ORDER BY DATE DESC LIMIT 1;")
+                self.err_count = 0
+                return c.fetchone()
+        except mysql.connector.errors.OperationalError as err:
+            self.err_count += 1
+            if self.err_count <= 3:
+                print("SQL Erreur :", err)
+                self.disconnect()
+                self.connect()
+                return self.getSay_to(receiverId)
+            else:
+                print("getSay_to Stop")
                 return False
 
     def __del__(self):

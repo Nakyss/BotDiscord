@@ -21,7 +21,7 @@ class Stop(commands.Cog):
                     await interaction.response.send_message(f"Vous n'etes pas connecté dans le même canal vocal que {self.bot.user.name}",ephemeral=True,delete_after=30)
                     return
                 
-                server.musicQueue = [0]
+                server.musicQueue = [{"title":"none", "duration":9999}]
                 await interaction.response.send_message("Deconnexion...",ephemeral=True,delete_after=40)
                 vc.pause()
                 vc.stop()

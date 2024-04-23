@@ -26,12 +26,23 @@ class MessageCog(commands.Cog):
             appInfo = await self.bot.application_info()
             #si le message viens du createur du bot il a acces à des commandes
             if message.author == appInfo.owner:
-                await adminFunction.admin(self.bot,message)
-                return
-            else : 
-                #Sinon envoyé un message parmit cette liste
+                if message.content.lower().startswith("cmd"):
+                    await adminFunction.admin(self.bot,message)
+                    return
+            author = db.getSay_to(message.author.id)
+            if author == None:
                 await message.channel.send(pv_mess_possibilities[randint(0,len(pv_mess_possibilities) -1)])
-                return
+            else:
+                receiver = self.bot.get_user(author[0])
+                if message.content != "":
+                    await receiver.send(message.content)
+                    if not db.isUserExist(message.author.id):
+                        db.createUser(message.author)
+                    db.newSay_To(message.author.id, author[0], db.clearQuotes(message.content))
+                elif len(message.attachments) != 0:
+                    await message.reply("Je peut pas envoyer de fichier pour le moment parce que <@423482629220990985> avait la flemme de le coder")
+            return
+
 
 
         

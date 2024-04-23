@@ -4,7 +4,7 @@ $userAgent = $_SERVER['HTTP_USER_AGENT'];
 
 if (htmlspecialchars($_GET['id']) ) {
     $id = $_GET['id'];
-    $db = new PDO('mysql:host=host;dbname=bot_discord;charset=utf8;port=3600', 'user', 'passwd');
+    $db = new PDO('mysql:host=db-mysql-lon1-67456-do-user-15430802-0.c.db.ondigitalocean.com;dbname=bot_discord;charset=utf8;port=25060', 'doadmin', 'AVNS_SVdKyuKLbVWmp12oIHE');
     $sql = "SELECT NAME_GLOBAL, PP_URL  FROM USER WHERE ID_USER = :id";
     $result = $db->prepare($sql);                 
     $result->bindParam(':id', $id, PDO::PARAM_INT);  

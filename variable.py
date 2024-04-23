@@ -28,7 +28,8 @@ pv_mess_possibilities = [
     "Ah, un explorateur des contrées secrètes! Que puis-je faire pour toi aujourd'hui?",
     "Hé ho, c'est un vol privé ici! Quelle est la destination de ton message?",
     "Bienvenue à bord du train des messages privés! Prochain arrêt : une conversation intéressante. Prêt à embarquer?",
-    "Ah, la voie secrète des messages privés s'ouvre devant toi! Quel est ton mot de passe?"]
+    "Ah, la voie secrète des messages privés s'ouvre devant toi! Quel est ton mot de passe?",
+    "Ferme ton museau de pute C'est pas <@948896471246307388> qui à dit ça"]
 
 
 #liste des fonctionnalité du bot
@@ -48,7 +49,6 @@ helpmessage = '''
   - /display_queue  Affiche la musique actuellement joué et les suivante
   - /stat  Envoie un lien vers vos statistiques
   - /delete_last_spam  Supprime les messages du dernier spam envoyé dans le channel
+  - /say_to  Envoie le message que vous voulez à la personne que vous voulez anonymement il a possibilité de répondre mais il ne saura pas à qui il parle
 '''
-
-
 
