@@ -33,10 +33,12 @@ Il s'agit d'un bot discord avec plusieurs options.
 Nous utilisons une base de donnée MySql   
 
  - Crée une base de données avec un nom au choix
- - Exécutée le fichier bd/bot_discord.sql ou son contenue dans votre base de données
+ - Exécutée le fichier `bd/bot_discord.sql` ou son contenue dans votre base de données
+
+
 
 ### Installation des librairies python
-Nous utilisont plusieurs librairies installez les avec les commandes suivantes:
+Nous utilisont plusieurs librairies installez les avec les commandes suivantes  
 ```
 pip install discord.py
 pip install python-dotenv
@@ -48,4 +50,13 @@ pip install youtube-search-python
 ````
 
 ### Configuration
-Ouvrez le fichier .env et remplisser les variables avec les donnée pour votre bot
+Ouvrez le fichier `.env` et remplisser les variables avec les donnée pour votre bot
+
+```
+DISCORD_BOT_TOKEN=your_token
+DISCORD_DB_HOST=your_db_host
+DISCORD_DB_USER=your_db_username
+DISCORD_DB_PASSWORD=your_db_password
+DISCORD_DB_PORT=your_db_port
+DISCORD_DB_DATABASE=your_database
+```
