@@ -47,6 +47,7 @@ pip install mutagen
 python -m pip install mysql-connector-python
 pip install yt-dlp
 pip install youtube-search-python
+pip install PyNaCl
 ````
 
 ### Configuration
