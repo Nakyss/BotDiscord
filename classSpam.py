@@ -61,6 +61,15 @@ class Spam:
 
             self.nbRepLastMessage = self.nbRep - totalRep
 
+    async def saveSpam(self,channel,idBot,idSpam):
+        allMessages = []
+        counter = 0
+        async for message in channel.history(limit=self.nbMessageToSend+15):
+            if message.author.id == idBot and counter != self.nbMessageToSend+1:
+                allMessages.append((idSpam, channel.id, message.id))
+                counter +=1
+        return allMessages
+
     def __init__(self,realMessage):
         self.realMessage = realMessage
 

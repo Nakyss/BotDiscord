@@ -78,13 +78,10 @@ class MessageCog(commands.Cog):
                 log(message.author,f"Send-4-'{db.clearBackslashN(spam.messageToSpam)}'",f"{message.guild.name} / {message.channel.name}")
 
                 await message.channel.send("frero abuse, dose un peu")
-                await db.saveSpamMessage(message)
 
                 for i in range(4):
                     await message.channel.send(spam.messageToSpam)
-                    await db.saveSpamMessage(message)
                 await message.channel.send("4 fois c'est deja pas mal")
-                await db.saveSpamMessage(message)
 
                 db.newSpam(message,4,spam.messageToSpam)  #add to db
                 
@@ -99,19 +96,18 @@ class MessageCog(commands.Cog):
             if (spam.nbRep > 6 ):
                 for i in range (spam.nbMessageToSend):
                     await message.channel.send((spam.messageToSpam+"\n")*spam.nbRepByMessage)
-                    await db.saveSpamMessage(message)
                 if (spam.nbRepByMessage != 0):
                     await message.channel.send((spam.messageToSpam+"\n")*spam.nbRepByMessage)
-                    await db.saveSpamMessage(message)
                 
             elif(spam.nbRep > 0):
             #envoie nbRep fois le messages
                 for i in range (spam.nbRep):
                     await message.channel.send(spam.messageToSpam)
-                    await db.saveSpamMessage(message)
-
             else:
                 await message.channel.send("Pourquoi faire ?")
+            
+            allMessages = await spam.saveSpam(message.channel,self.bot.user.id,message.id)
+            db.saveSpamMessage(allMessages)
 
             server.isChannelSpamming = False
             return

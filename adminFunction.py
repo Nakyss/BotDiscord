@@ -11,7 +11,7 @@ async def admin (bot,message):
 
     #Envoie une liste des serveurs
     elif message.content.lower()[4:] == "server":
-        result = db.executeSelect("SELECT NAME, NB_USER, DATE_FORMAT(JOIN_DATE, '%e/%M/%Y'), CAN_JOIN_VOC, STATUS FROM SERVER")
+        result = db.select("SELECT NAME, NB_USER, DATE_FORMAT(JOIN_DATE, '%e/%M/%Y'), CAN_JOIN_VOC, STATUS FROM SERVER")
         sendableMesseage = '```'
         for serv in result:
             sendableMesseage += f'\n{serv[0]} -  {serv[1]} Utilisateurs  -  Depuis le {serv[2]}  -  Peut rejoindre le voc :{serv[3]}  -  Status : {serv[4]}'
@@ -20,7 +20,7 @@ async def admin (bot,message):
 
     #Envoie les infos des 10 dernier messages
     elif message.content.lower()[4:] == "message":
-        result = db.executeSelect("SELECT U.NAME_GLOBAL, M.LENGTH, M.NB_ATTACHMEMTS, DATE_FORMAT(DATE, '%H:%i %e/%m/%Y') FROM MESSAGE M JOIN USER U ON U.ID_USER = M.ID_USER ORDER BY M.DATE DESC LIMIT 10")
+        result = db.select("SELECT U.NAME_GLOBAL, M.LENGTH, M.NB_ATTACHMEMTS, DATE_FORMAT(DATE, '%H:%i %e/%m/%Y') FROM MESSAGE M JOIN USER U ON U.ID_USER = M.ID_USER ORDER BY M.DATE DESC LIMIT 10")
         sendableMesseage = '```'
         for mess in result:
             sendableMesseage += f'\n{mess[0]} - {mess[1]} Caractères - {mess[2]} Fichier - {mess[3]} '

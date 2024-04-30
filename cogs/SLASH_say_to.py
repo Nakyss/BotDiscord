@@ -16,6 +16,18 @@ class Say_to(commands.Cog):
         await member.send(message)
         await interaction.response.send_message(f"Le message suivant à été envoyé à <@{member.id}>:\n{message}",ephemeral=True)
         log(interaction.user.name,f"Send a message to {member.name}",f"{interaction.guild.name} / {interaction.channel.name}")
+
+
+        #check dans la db si l'auteur existe sinon le crée 
+        if not db.isServerExist(interaction.guild.id):
+                db.createServer(interaction.guild)
+        if not db.isUserExist(interaction.user.id):
+            db.createUser(interaction.user)
+        if not db.isServerProfileExist(interaction.user):
+            db.createServerProfile(interaction.user)
+
+
+
         db.newSay_To(interaction.user.id, member.id, message)
         
     @say_to.error

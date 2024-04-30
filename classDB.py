@@ -16,6 +16,39 @@ class DB:
         self.db.close()
         print(f"DB Disconnected : {self.mydb['database']}")
 
+    def select(self,request):
+        try:
+            with self.db.cursor() as c:
+                c.execute(request)
+                self.err_count = 0
+                return c.fetchall()
+        except mysql.connector.errors.OperationalError as err:
+            self.err_count += 1
+            if self.err_count <= 3:
+                print("SQL Erreur :", err)
+                self.disconnect()
+                self.connect()
+                return self.select(request)
+            else:
+                print("Impossible de se connecter à la db")
+                return False
+            
+    def insert(self,request):
+        try:
+            with self.db.cursor() as c:
+                c.execute(request)
+                self.db.commit()
+                self.err_count = 0
+        except mysql.connector.errors.OperationalError as err:
+            self.err_count += 1
+            if self.err_count <= 3:
+                print("SQL Erreur :", err)
+                self.disconnect()
+                self.connect()
+                self.insert(request)
+            else:
+                print("Impossible de se connecter à la db")
+
     def __init__(self): 
         self.mydb = {
         'host' : os.environ.get('DISCORD_DB_HOST'),
@@ -36,77 +69,19 @@ class DB:
         return message.replace("\n","\\n ")
 
     def isServerExist(self,guild_id):
-        try :
-            with self.db.cursor() as c:
-                c.execute(f"SELECT COUNT(*) FROM SERVER WHERE ID_SERVER = {guild_id}")
-                result = c.fetchone()
-                self.err_count = 0
-            return (result[0] == 1)
-            
-        except mysql.connector.errors.OperationalError as err:
-            self.err_count += 1
-            if self.err_count <= 3:
-                print("SQL Erreur :", err)
-                self.disconnect()
-                self.connect()
-                return self.isServerExist(guild_id)
-            else:
-                print("isServerExist Stop")
-                return False
+        result = self.select(f"SELECT COUNT(*) FROM SERVER WHERE ID_SERVER = {guild_id}")
+        return result[0][0]
 
     def createServer(self,guild):
-        try :
-            with self.db.cursor() as c:
-                c.execute(f'''INSERT INTO `SERVER` (`ID_SERVER`, `NAME`, `ICON_URL`,`NB_USER`, `JOIN_DATE`, `CAN_JOIN_VOC`, `STATUS`) 
+        self.insert(f'''INSERT INTO `SERVER` (`ID_SERVER`, `NAME`, `ICON_URL`,`NB_USER`, `JOIN_DATE`, `CAN_JOIN_VOC`, `STATUS`) 
                         VALUES ({guild.id} ,'{self.clearQuotes(guild.name)}', '{guild.icon.with_size(128).url}',{guild.member_count}, CURDATE(), FALSE, TRUE)''')
-                self.db.commit()
-                self.err_count = 0
-        except mysql.connector.errors.OperationalError as err:
-            self.err_count += 1
-            if self.err_count <= 3:
-                print("SQL Erreur :", err)
-                self.disconnect()
-                self.connect()
-                self.createServer(self,guild) 
-            else:
-                print("createServer Stop")
-                return False 
 
     def updateServer(self, guild, status = 1):
-        try:
-            with self.db.cursor() as c:
-                c.execute(f"UPDATE `SERVER` SET `NAME` = '{self.clearQuotes(guild.name)}', `ICON_URL` = '{guild.icon.with_size(128).url}', NB_USER = {guild.member_count}, STATUS = {status} WHERE `SERVER`.`ID_SERVER` = {guild.id}")
-                self.db.commit()
-                self.err_count = 0
-        except mysql.connector.errors.OperationalError as err:
-            self.err_count += 1
-            if self.err_count <= 3:
-                print("SQL Erreur :", err)
-                self.disconnect()
-                self.connect()
-                self.updateServer(guild,status)
-            else:
-                print("updateServer Stop")
-                return False
+        self.insert(f"UPDATE `SERVER` SET `NAME` = '{self.clearQuotes(guild.name)}', `ICON_URL` = '{guild.icon.with_size(128).url}', NB_USER = {guild.member_count}, STATUS = {status} WHERE `SERVER`.`ID_SERVER` = {guild.id}")
 
     def isUserExist(self,user_id):
-        try:
-            with self.db.cursor() as c:
-                c.execute(f"SELECT COUNT(*) FROM USER WHERE ID_USER = {user_id}")
-                result = c.fetchone()
-                self.err_count = 0
-            return (result[0] == 1)
-        
-        except mysql.connector.errors.OperationalError as err:
-            self.err_count += 1
-            if self.err_count <= 3:
-                print("SQL Erreur :", err)
-                self.disconnect()
-                self.connect()
-                return self.isUserExist(user_id)
-            else:
-                print("isUserExist Stop")
-                return False
+        result = self.select(f"SELECT COUNT(*) FROM USER WHERE ID_USER = {user_id}")
+        return (result[0][0] == 1)
 
     def updateUser(self,user):
         #garde le nom si le nom d'affichage n'existe pas 
@@ -121,21 +96,7 @@ class DB:
         else:
             avatarUrl = user.avatar.with_size(128).url
 
-        try :
-            with self.db.cursor() as c:
-                c.execute(f"UPDATE `USER` SET `NAME` = '{user.name}', `NAME_GLOBAL` = '{globalName}',`PP_URL` = '{avatarUrl}' WHERE `USER`.`ID_USER` = {user.id}")
-                self.db.commit()
-                self.err_count = 0
-        except mysql.connector.errors.OperationalError as err:
-            self.err_count += 1
-            if self.err_count <= 3:
-                print("SQL Erreur :", err)
-                self.disconnect()
-                self.connect()
-                self.updateUser(user)
-            else:
-                print("updateUser Stop")
-                return False
+        self.insert(f"UPDATE `USER` SET `NAME` = '{user.name}', `NAME_GLOBAL` = '{globalName}',`PP_URL` = '{avatarUrl}' WHERE `USER`.`ID_USER` = {user.id}")
 
     def createUser(self,user):
         #garde le nom si le nom d'affichage n'existe pas 
@@ -144,46 +105,17 @@ class DB:
         else:
             globalName = user.global_name
 
-
         #verifie si il a une pp ou pas
         if user.avatar == None :
             avatarUrl = user.default_avatar.with_size(128).url
         else:
             avatarUrl = user.avatar.with_size(128).url
 
-        try:
-            with self.db.cursor() as c:
-                c.execute(f"INSERT INTO `USER` (`ID_USER`, `NAME`, `NAME_GLOBAL`, `PP_URL`) VALUES ({user.id} ,'{self.clearQuotes(user.name)}','{self.clearQuotes(globalName)}', '{avatarUrl}')")
-                self.db.commit()
-                self.err_count = 0
-        except mysql.connector.errors.OperationalError as err:
-            self.err_count += 1
-            if self.err_count <= 3:
-                print("SQL Erreur :", err)
-                self.disconnect()
-                self.connect()
-                self.createUser(user)
-            else:
-                print("createUser Stop")
-                return False
+        self.insert(f"INSERT INTO `USER` (`ID_USER`, `NAME`, `NAME_GLOBAL`, `PP_URL`) VALUES ({user.id} ,'{self.clearQuotes(user.name)}','{self.clearQuotes(globalName)}', '{avatarUrl}')")
 
     def isServerProfileExist(self,user):
-        try:
-            with self.db.cursor() as c:
-                c.execute(f"SELECT COUNT(*) FROM USER_SERVER WHERE ID_USER = {user.id} AND ID_SERVER = {user.guild.id}")
-                result = c.fetchone()
-            self.err_count = 0
-            return (result[0] == 1)
-        except mysql.connector.errors.OperationalError as err:
-            self.err_count += 1
-            if self.err_count <= 3:
-                print("SQL Erreur :", err)
-                self.disconnect()
-                self.connect()
-                return self.isServerProfileExist(user)
-            else:
-                print("isServerProfileExist Stop")
-                return False
+        result = self.select(f"SELECT COUNT(*) FROM USER_SERVER WHERE ID_USER = {user.id} AND ID_SERVER = {user.guild.id}")
+        return (result[0][0] == 1)
 
     def updateServerProfile(self,user):
         #verifie si il a une pp ou pas
@@ -194,21 +126,8 @@ class DB:
                 avatarUrl = user.avatar.with_size(128).url
             else:
                 avatarUrl = user.default_avatar.with_size(128).url
-        try:
-            with self.db.cursor() as c:
-                c.execute(f"UPDATE `USER_SERVER` SET `NAME_SERVER` = '{self.clearQuotes(user.display_name)}', `PP_URL_SERVER` = '{avatarUrl}' WHERE `USER_SERVER`.`ID_USER` = {user.id} AND `USER_SERVER`.`ID_SERVER` = {user.guild.id}")
-                self.db.commit()
-            self.err_count = 0
-        except mysql.connector.errors.OperationalError as err:
-            self.err_count += 1
-            if self.err_count <= 3:
-                print("SQL Erreur :", err)
-                self.disconnect()
-                self.connect()
-                self.updateServerProfile(user)
-            else:
-                print("updateServerProfile Stop")
-                return False
+
+        self.insert(f"UPDATE `USER_SERVER` SET `NAME_SERVER` = '{self.clearQuotes(user.display_name)}', `PP_URL_SERVER` = '{avatarUrl}' WHERE `USER_SERVER`.`ID_USER` = {user.id} AND `USER_SERVER`.`ID_SERVER` = {user.guild.id}")
 
     def createServerProfile(self,user):
         if user.display_avatar != None:
@@ -218,21 +137,8 @@ class DB:
                 avatarUrl = user.avatar.with_size(128).url
             else:
                 avatarUrl = user.default_avatar.with_size(128).url
-        try:
-            with self.db.cursor() as c:
-                c.execute(f"INSERT INTO `USER_SERVER` (`ID_USER`, `ID_SERVER`, `NAME_SERVER`,`PP_URL_SERVER`) VALUES ({user.id} ,{user.guild.id}, '{self.clearQuotes(user.display_name)}', '{avatarUrl}')")
-                self.db.commit()
-            self.err_count = 0
-        except mysql.connector.errors.OperationalError as err:
-            self.err_count += 1
-            if self.err_count <= 3:
-                print("SQL Erreur :", err)
-                self.disconnect()
-                self.connect()
-                self.createServerProfile(user)
-            else:
-                print("createServerProfile Stop")
-                return False
+        
+        self.insert(f"INSERT INTO `USER_SERVER` (`ID_USER`, `ID_SERVER`, `NAME_SERVER`,`PP_URL_SERVER`) VALUES ({user.id} ,{user.guild.id}, '{self.clearQuotes(user.display_name)}', '{avatarUrl}')")
 
 
     def newVocalSession(self,member):
@@ -269,121 +175,37 @@ class DB:
         if not f"{member.id}" in data:
             return 
 
-        try : 
-            with self.db.cursor() as c:
-                time = getTime()
-                c.execute(f"UPDATE `VOCAL_SESSION` SET `QUIT` = {time}, `TIME_VOC` = {time-data[f'{member.id}'][1]} WHERE `VOCAL_SESSION`.`ID_VOC` = {data[f'{member.id}'][0]}")
-                self.db.commit()
-            self.err_count = 0
-
-            del data[f'{member.id}']
-            saveJson(data)
-
-        except mysql.connector.errors.OperationalError as err:
-            self.err_count += 1
-            if self.err_count <= 3:
-                print("SQL Erreur :", err)
-                self.disconnect()
-                self.connect()
-                self.closeVocalSession(member)
-            else:
-                print("closeVocalSession Stop")
-                return False
+        time = getTime()
+        self.insert(f"UPDATE `VOCAL_SESSION` SET `QUIT` = {time}, `TIME_VOC` = {time-data[f'{member.id}'][1]} WHERE `VOCAL_SESSION`.`ID_VOC` = {data[f'{member.id}'][0]}")
+        del data[f'{member.id}']
+        saveJson(data)
 
 
     def newMessage(self,message):
-        try:
-            with self.db.cursor() as c:
-                c.execute(f"INSERT INTO `MESSAGE` (ID_MESSAGE, LENGTH, NB_ATTACHMEMTS, DATE, ID_USER, ID_SERVER) VALUES ({message.id} , {len(message.content)}, {len(message.attachments)},STR_TO_DATE('{getTimeV2()}','%d-%m-%y %H:%i:%S'), {message.author.id}, {message.guild.id})")
-                self.db.commit()
-                self.err_count = 0
-        except mysql.connector.errors.OperationalError as err:
-            self.err_count += 1
-            if self.err_count <= 3:
-                print("SQL Erreur :", err)
-                self.disconnect()
-                self.connect()
-                self.newMessage(message)
-            else:
-                print("newMessage Stop")
-                return False
+        self.insert(f"""INSERT INTO `MESSAGE` (ID_MESSAGE, LENGTH, NB_ATTACHMEMTS, DATE, ID_USER, ID_SERVER)
+                     VALUES ({message.id} , {len(message.content)}, {len(message.attachments)},STR_TO_DATE('{getTimeV2()}','%d-%m-%y %H:%i:%S'), {message.author.id}, {message.guild.id})""")
 
     def newSpam(self, message,nbrep,content):
-        try:
-            with self.db.cursor() as c:
-                c.execute(f"INSERT INTO `SPAM` (`ID_SPAM`, `NB_REP`, `CONTENT`, `DATE`, `ID_USER`, `ID_SERVER`) VALUES ({message.id} , {nbrep}, '{self.clearQuotes(content)}', STR_TO_DATE('{getTimeV2()}','%d-%m-%y %H:%i:%S'), {message.author.id}, {message.guild.id})")
-                self.db.commit()
-                self.err_count = 0
-        except mysql.connector.errors.OperationalError as err:
-            self.err_count += 1
-            if self.err_count <= 3:
-                print("SQL Erreur :", err)
-                self.disconnect()
-                self.connect()
-                self.newSpam(message,nbrep,content)
-            else:
-                print("newSpam Stop")
-                return False
+        self.insert(f"""INSERT INTO `SPAM` (`ID_SPAM`, `NB_REP`, `CONTENT`, `DATE`, `ID_USER`, `ID_SERVER`)
+                     VALUES ({message.id} , {nbrep}, '{self.clearQuotes(content)}', STR_TO_DATE('{getTimeV2()}','%d-%m-%y %H:%i:%S'), {message.author.id}, {message.guild.id})""")
 
 
     def checkCanJoinVoc(self,guild_id):
-        try:
-            with self.db.cursor() as c:
-                c.execute(f"SELECT CAN_JOIN_VOC FROM SERVER WHERE ID_SERVER = {guild_id}")
-                result = c.fetchone()
-            self.err_count = 0
-            return result[0]
-        except mysql.connector.errors.OperationalError as err:
-            self.err_count += 1
-            if self.err_count <= 3:
-                print("SQL Erreur :", err)
-                self.disconnect()
-                self.connect()
-                return self.checkCanJoinVoc(guild_id)
-            else:
-                print("checkCanJoinVoc Stop")
-                return False
+        result = self.select(f"SELECT CAN_JOIN_VOC FROM SERVER WHERE ID_SERVER = {guild_id}")
+        return (result[0][0])
 
     def editCanJoinVoc(self,guild_id,statut):
-        try:
-            with self.db.cursor() as c:
-                c.execute(f"UPDATE SERVER SET CAN_JOIN_VOC = {statut} WHERE ID_SERVER = {guild_id}")
-                self.db.commit()
-                self.err_count = 0
-        except mysql.connector.errors.OperationalError as err:
-            self.err_count += 1
-            if self.err_count <= 3:
-                print("SQL Erreur :", err)
-                self.disconnect()
-                self.connect()
-                self.editCanJoinVoc(guild_id,statut)
-            else:
-                print("editCanJoinVoc Stop")
-                return False
+        self.insert(f"UPDATE SERVER SET CAN_JOIN_VOC = {statut} WHERE ID_SERVER = {guild_id}")
 
     def deleteLastSpam(self, channel):
+        self.insert(f"DELETE FROM LAST_SPAM WHERE ID_CHANNEL = {channel.id};")
+
+    def saveSpamMessage(self,values):
+        sql = "INSERT INTO LAST_SPAM (ID_SPAM, ID_CHANNEL, ID_MESSAGE) VALUES (%s ,%s, %s)"
         try:
             with self.db.cursor() as c:
-                c.execute(f"DELETE FROM LAST_SPAM WHERE ID_CHANNEL = {channel.id};")
+                c.executemany(sql, values)
                 self.db.commit()
-                self.err_count = 0
-        except mysql.connector.errors.OperationalError as err:
-            self.err_count += 1
-            if self.err_count <= 3:
-                print("SQL Erreur :", err)
-                self.disconnect()
-                self.connect()
-                self.deleteLastSpam(channel)
-            else:
-                print("deleteLastSpam Stop")
-                return False
-
-    async def saveSpamMessage(self,message):
-        try:
-            async for newMessage in message.channel.history(limit=1):
-                with self.db.cursor() as c:
-                    c.execute(f"INSERT INTO LAST_SPAM (ID_SPAM , ID_CHANNEL, ID_MESSAGE ) VALUES ({message.id} ,{message.channel.id}, {newMessage.id})")
-                    self.db.commit()
             self.err_count = 0
         except mysql.connector.errors.OperationalError as err:
             self.err_count += 1
@@ -391,7 +213,7 @@ class DB:
                 print("SQL Erreur :", err)
                 self.disconnect()
                 self.connect()
-                self.saveSpamMessage(message)
+                self.saveSpamMessage(values)
             else:
                 print("saveSpamMessage Stop")
                 return False
@@ -406,90 +228,17 @@ class DB:
             return []
 
     def getLastSpam(self, channel):
-        try:
-            with self.db.cursor() as c:
-                c.execute(f"SELECT LS.ID_SPAM ,LS.ID_MESSAGE, S.ID_USER FROM LAST_SPAM LS JOIN SPAM S ON LS.ID_SPAM = S.ID_SPAM WHERE LS.ID_CHANNEL = {channel.id};")
-                self.err_count = 0
-                return c.fetchall()
-        except mysql.connector.errors.OperationalError as err:
-            self.err_count += 1
-            if self.err_count <= 3:
-                print("SQL Erreur :", err)
-                self.disconnect()
-                self.connect()
-                return self.getLastSpam(channel)
-            else:
-                print("getLastSpam Stop")
-                return False
+        return self.select(f"SELECT LS.ID_SPAM ,LS.ID_MESSAGE, S.ID_USER FROM LAST_SPAM LS JOIN SPAM S ON LS.ID_SPAM = S.ID_SPAM WHERE LS.ID_CHANNEL = {channel.id};")
             
     def deleteUser_Server(self, guildID, userID):
-        try:
-            with self.db.cursor() as c:
-                c.execute(f"DELETE FROM USER_SERVER WHERE ID_USER = {userID} AND ID_SERVER = {guildID}")
-                self.db.commit()
-            self.err_count = 0
-        except mysql.connector.errors.OperationalError as err:
-            self.err_count += 1
-            if self.err_count <= 3:
-                print("SQL Erreur :", err)
-                self.disconnect()
-                self.connect()
-                self.deleteUser_Server(guildID, userID)
-            else:
-                print("deleteUser_Server Stop")
-                return False
-
-    def executeSelect(self,request):
-        try:
-            with self.db.cursor() as c:
-                c.execute(request)
-                self.err_count = 0
-                return c.fetchall()
-        except mysql.connector.errors.OperationalError as err:
-            self.err_count += 1
-            if self.err_count <= 3:
-                print("SQL Erreur :", err)
-                self.disconnect()
-                self.connect()
-                return self.executeSelect(request)
-            else:
-                print("executeSelect Stop")
-                return False
-
+        self.insert(f"DELETE FROM USER_SERVER WHERE ID_USER = {userID} AND ID_SERVER = {guildID}")
 
     def newSay_To(self,authorId,receiverId,message):
-        try:
-            with self.db.cursor() as c:
-                c.execute(f"INSERT INTO `SAY_TO` (`AUTHOR`, `RECEIVER`, `DATE`, `MESSAGE`) VALUES ({authorId}, {receiverId}, STR_TO_DATE('{getTimeV2()}','%d-%m-%y %H:%i:%S'), '{message}')")
-                self.db.commit()
-                self.err_count = 0
-        except mysql.connector.errors.OperationalError as err:
-            self.err_count += 1
-            if self.err_count <= 3:
-                print("SQL Erreur :", err)
-                self.disconnect()
-                self.connect()
-                return self.newSay_To(authorId,receiverId,message)
-            else:
-                print("newSay_To Stop")
-                return False
+        self.insert(f"INSERT INTO `SAY_TO` (`AUTHOR`, `RECEIVER`, `DATE`, `MESSAGE`) VALUES ({authorId}, {receiverId}, STR_TO_DATE('{getTimeV2()}','%d-%m-%y %H:%i:%S'), '{message}')")
     
     def getSay_to(self,receiverId):
-        try:
-            with self.db.cursor() as c:
-                c.execute(f"SELECT AUTHOR FROM SAY_TO WHERE RECEIVER = {receiverId} ORDER BY DATE DESC LIMIT 1;")
-                self.err_count = 0
-                return c.fetchone()
-        except mysql.connector.errors.OperationalError as err:
-            self.err_count += 1
-            if self.err_count <= 3:
-                print("SQL Erreur :", err)
-                self.disconnect()
-                self.connect()
-                return self.getSay_to(receiverId)
-            else:
-                print("getSay_to Stop")
-                return False
+        result = self.select(f"SELECT AUTHOR FROM SAY_TO WHERE RECEIVER = {receiverId} ORDER BY DATE DESC LIMIT 1;")
+        return result[0]
 
     def __del__(self):
         self.disconnect()
