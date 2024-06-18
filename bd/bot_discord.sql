@@ -1,3 +1,6 @@
+
+
+
 -- Table structure for table `LAST_SPAM`
 CREATE TABLE `LAST_SPAM` (
   `ID_SPAM`     bigint  NOT NULL,

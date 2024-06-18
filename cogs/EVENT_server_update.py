@@ -1,6 +1,8 @@
 from functions import log
 from discord.ext import commands
 from variable import db
+import variable as v
+from classServer import Server
 
 
 
@@ -14,6 +16,7 @@ class Server_update(commands.Cog):
         log(self.bot.user.name,"Added-to-server",guild.name)
         if not db.isServerExist(guild.id):
             db.createServer(guild)
+            v.allServer[guild.id] = Server(guild.id)
         else:
             db.updateServer(guild)
 

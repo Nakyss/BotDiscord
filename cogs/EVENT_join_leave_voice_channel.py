@@ -1,6 +1,7 @@
 from functions import log,getTime,setMute,setUnMute
 from discord.ext import commands
 from variable import db,allServer
+from classServer import Server
 
 class Join_leave_voice_channel(commands.Cog):
     def __init__(self, bot):
@@ -16,6 +17,7 @@ class Join_leave_voice_channel(commands.Cog):
 
             if not db.isServerExist(member.guild.id):
                 db.createServer(member.guild)
+                allServer[member.guild.id] = Server(member.guild.id)
             if not db.isUserExist(member.id):
                 db.createUser(member)
             if not db.isServerProfileExist(member):

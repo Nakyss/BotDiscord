@@ -7,7 +7,7 @@ class Jetais_mute(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(name="jetais_mute", description="Pour savoir depuis combien de temps tu etait mute")
+    @app_commands.command(name="gt_mute", description="Pour savoir depuis combien de temps tu etait mute")
     @app_commands.guild_only()
     async def jetais_mute(self, interaction: discord.Interaction):
         data = openJson()
