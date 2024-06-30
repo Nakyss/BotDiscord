@@ -1,7 +1,7 @@
 import discord
 import os
-from functions import folderExist,maxUser,log,createFolder,getTime,getAudioDuration
-from random import random,randint
+from functions import folderExist,maxUser,log,createFolder,getTime,getAudioDuration,luck
+from random import randint
 import asyncio
 import variable
 from yt_dlp import YoutubeDL
@@ -57,14 +57,11 @@ class Server:
             if variable.db.checkCanJoinVoc(self.id):
                 channel = maxUser(guild.voice_channels)
 
-
                 # Vérifie s'il y a au moins 1 personnes dans le canal vocal
                 if len(channel.members) >= 1:
-                    # Génération d'un nombre aléatoire pour la condition "au hasard"
-                    random_number = random()
 
-                    # 50% de chance de rejoindre le canal vocal et de jouer une piste audio
-                    if random_number <= 0.3:
+                    # 30% de chance de rejoindre le canal vocal et de jouer une piste audio
+                    if luck(30):
                         if not self.isInVoiceChannel(bot):
                             log(bot.user.name,"Play-music-start",f"{channel.guild.name} / {channel.name}")
                             stop = 0

@@ -5,6 +5,18 @@ import os
 import shutil
 from mutagen.mp3 import MP3
 import json
+import variable as v
+from random import randint,random
+import requests
+
+#return true or false pourcentage is the chance that is true
+def luck(percentage:int):
+    if percentage < 0:
+        percentage = 0
+    elif percentage > 100:
+        percentage = 100
+
+    return (random() <= (percentage/100))
 
 def openJson():
     with open('actualSession.json', 'r') as rfile:
@@ -156,3 +168,20 @@ def format_total_time(total_time):
 
     return result.strip()
 
+def activityName():
+    return v.someActivity[randint(0, len(v.someActivity)-1)]
+
+def saveImgFromLink(link):
+    img_data = requests.get(link).content
+    with open('pp/new_pp.jpg', 'wb') as handler:
+        handler.write(img_data)
+
+def getARandomPP() -> str:
+    profil_pics = v.db.select("SELECT PP_URL FROM USER")
+    deleteFile("pp/new_pp.jpg")
+    saveImgFromLink(profil_pics[randint(0,len(profil_pics)-1)][0])
+    return "pp/new_pp.jpg"
+
+def deleteFile(fileName):
+    if os.path.exists(fileName):
+        os.remove(fileName)

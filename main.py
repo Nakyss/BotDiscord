@@ -1,10 +1,11 @@
 import discord
-from os import listdir, environ
-from discord.ext import commands
+from os import listdir, environ,path
+from discord.ext import commands, tasks
 from classServer import Server
 import variable as v
 from classDB import DB
 from dotenv import load_dotenv
+import functions as f
 
 load_dotenv('.env')
 
@@ -12,6 +13,24 @@ intents = discord.Intents.all()
 bot = commands.Bot(command_prefix="/", intents=intents)
 
 client = discord.Client(intents=intents)
+
+@tasks.loop(hours = 2)
+async def myLoop():
+    await bot.change_presence(activity=discord.Game(f.activityName()))
+
+    #change pp with a pp of one of the users
+    if (f.luck(20)):
+        with open(f.getARandomPP(), mode='rb') as file:
+            try:
+                await bot.user.edit(avatar=file.read())
+            except discord.errors.HTTPException:
+                print("changing pp to fast")
+    else:
+        if path.exists("pp/new_pp.jpg"):
+            f.deleteFile()
+            with open(environ.get('DISCORD_BOT_PP_PATH'), mode='rb') as file:
+                await bot.user.edit(avatar=file.read())
+    
 
 
 @bot.event
@@ -38,8 +57,7 @@ async def on_ready():
     except Exception as e:
         print(e)
 
-    game = discord.Game("Pignouf")
-    await bot.change_presence(activity=game)
+    myLoop.start()
 
 
 bot.run(environ.get('DISCORD_BOT_TOKEN'))

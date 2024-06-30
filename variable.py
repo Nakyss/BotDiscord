@@ -53,3 +53,11 @@ helpmessage = '''
   - /say_to  Envoie le message que vous voulez à la personne que vous voulez anonymement il a possibilité de répondre mais il ne saura pas à qui il parle
 '''
 
+#liste des activité possible 
+someActivity = [
+    "Pignouf",
+    "Fortnite",
+    "Valorant",
+    "Je me fait chier là",
+    "Among Us"
+]
