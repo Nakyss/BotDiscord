@@ -171,16 +171,18 @@ def format_total_time(total_time):
 def activityName():
     return v.someActivity[randint(0, len(v.someActivity)-1)]
 
-def saveImgFromLink(link):
+def saveImgFromLink(link,path = "newImg.png"):
     img_data = requests.get(link).content
-    with open('pp/new_pp.jpg', 'wb') as handler:
+    with open(path, 'wb') as handler:
         handler.write(img_data)
+    return path
 
 def getARandomPP() -> str:
-    profil_pics = v.db.select("SELECT PP_URL FROM USER")
-    deleteFile("pp/new_pp.jpg")
-    saveImgFromLink(profil_pics[randint(0,len(profil_pics)-1)][0])
-    return "pp/new_pp.jpg"
+    profil_pics = v.db.select("SELECT U.PP_URL, ((SELECT COALESCE(COUNT(*), 0) FROM MESSAGE M JOIN SERVER S ON M.ID_SERVER = S.ID_SERVER WHERE M.ID_USER = U.ID_USER AND S.STATUS = 1)*350+ (SELECT COALESCE(SUM(VC.TIME_VOC), 0) FROM VOCAL_SESSION VC JOIN SERVER S ON VC.ID_SERVER = S.ID_SERVER WHERE VC.ID_USER = U.ID_USER AND S.STATUS = 1)+ (SELECT COALESCE(SUM(S.NB_REP), 0) FROM SPAM S JOIN SERVER SE ON SE.ID_SERVER = S.ID_SERVER WHERE S.ID_USER = U.ID_USER AND SE.STATUS = 1)*3) as result FROM USER U ORDER BY result DESC LIMIT 12")
+    #profil_pics = v.db.select("SELECT PP_URL FROM USER")
+    deleteFile("pp/new_pp.png")
+    saveImgFromLink(profil_pics[randint(0,len(profil_pics)-1)][0],"pp/new_pp.png")
+    return "pp/new_pp.png"
 
 def deleteFile(fileName):
     if os.path.exists(fileName):

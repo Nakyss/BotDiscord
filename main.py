@@ -18,16 +18,19 @@ client = discord.Client(intents=intents)
 async def myLoop():
     await bot.change_presence(activity=discord.Game(f.activityName()))
 
+
     #change pp with a pp of one of the users
-    if (f.luck(20)):
+
+    if (f.luck(7)):
         with open(f.getARandomPP(), mode='rb') as file:
             try:
                 await bot.user.edit(avatar=file.read())
+                f.log(bot.user.name,"Change-is-profil-picture","everywhere")
             except discord.errors.HTTPException:
                 print("changing pp to fast")
     else:
-        if path.exists("pp/new_pp.jpg"):
-            f.deleteFile()
+        if path.exists("pp/new_pp.png"):
+            f.deleteFile("pp/new_pp.png")
             with open(environ.get('DISCORD_BOT_PP_PATH'), mode='rb') as file:
                 await bot.user.edit(avatar=file.read())
     
@@ -59,5 +62,5 @@ async def on_ready():
 
     myLoop.start()
 
-
-bot.run(environ.get('DISCORD_BOT_TOKEN'))
+if __name__ == "__main__":
+    bot.run(environ.get('DISCORD_BOT_TOKEN'))

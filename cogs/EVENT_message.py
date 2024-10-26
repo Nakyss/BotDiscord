@@ -29,8 +29,12 @@ class MessageCog(commands.Cog):
                 if message.content.lower().startswith("cmd"):
                     await adminFunction.admin(self.bot,message)
                     return
+                
+            #recupère la personne qui nous a envoyer un message avec /say_to
             author = db.getSay_to(message.author.id)
+
             if author == None:
+                #envoyer un des messages possible 
                 await message.channel.send(pv_mess_possibilities[randint(0,len(pv_mess_possibilities) -1)])
             else:
                 receiver = self.bot.get_user(author[0])
@@ -39,11 +43,10 @@ class MessageCog(commands.Cog):
                     if not db.isUserExist(message.author.id):
                         db.createUser(message.author)
                     db.newSay_To(message.author.id, author[0], db.clearQuotes(message.content))
+                    log(message.author.name,f"respond-to-private-message-from-{receiver.name}","private-message")
                 elif len(message.attachments) != 0:
                     await message.reply("Je peut pas envoyer de fichier pour le moment parce que <@423482629220990985> avait la flemme de le coder")
             return
-
-
 
         
 

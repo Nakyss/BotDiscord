@@ -54,7 +54,11 @@ class Display_Queue(commands.Cog):
                             title = server.musicQueue[i]['title'].replace('_', '\\_')
                             embed.add_field(name=f"#{i} - {title}", value=f"Volume : {server.musicQueue[i]['volume']}%   Durée : {audioDuration(server.musicQueue[i]['duration'])}", inline=False)
 
-                await interaction.edit_original_response(embed=upadateEmbed)
+                try:
+                    await interaction.edit_original_response(embed=upadateEmbed)
+                except discord.errors.NotFound:
+                    print("display queue suprimmer return, arret de la fonction")
+                    return
                 nbMusic = len(server.musicQueue)
                 await asyncio.sleep(1)
                 
@@ -62,7 +66,6 @@ class Display_Queue(commands.Cog):
         else:
             await interaction.response.send_message("Aucun élement dans la liste",ephemeral=True,delete_after=30)
         
-
 
     @display_queue.error
     async def say_error(self, interaction: discord.Interaction, error):

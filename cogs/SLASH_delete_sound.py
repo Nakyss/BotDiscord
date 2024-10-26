@@ -4,6 +4,7 @@ from discord import app_commands
 from discord.ext import commands
 from typing import List
 from variable import allServer
+from functions import log
 
 class Delete_sound(commands.Cog):
     def __init__(self, bot):
@@ -19,21 +20,22 @@ class Delete_sound(commands.Cog):
             for choice in choices if current.lower() in choice.lower()
         ]
 
-    #Commande pour supprimé des fichier dans la liste
+    #Commande pour supprimé des file dans la liste
     @app_commands.command(name="delete_sound", description="Supprime des sons pour le bot dans votre serveur")
     @app_commands.guild_only()   
-    @app_commands.autocomplete(fichier=del_autocomplete)
-    @app_commands.describe(fichier='Nom du fichier à supprimer') 
-    async def delete_sound(self, interaction: discord.Interaction, fichier: str):
-        if not fichier.endswith(".mp3"):
-            fichier += ".mp3"              #ajoute .mp3 on nom du fichier a supprimé
-        if os.path.exists(f"botSound/{interaction.guild.id}/{fichier}"):
-            os.remove(f"botSound/{interaction.guild.id}/{fichier}")
-            fichier = fichier.replace("_", '\\_')
-            await interaction.response.send_message(f"{fichier} à été supprimé",ephemeral=True,delete_after=30)
+    @app_commands.autocomplete(file=del_autocomplete)
+    @app_commands.describe(file='Nom du file à supprimer') 
+    async def delete_sound(self, interaction: discord.Interaction, file: str):
+        if not file.endswith(".mp3"):
+            file += ".mp3"              #ajoute .mp3 on nom du file a supprimé
+        if os.path.exists(f"botSound/{interaction.guild.id}/{file}"):
+            os.remove(f"botSound/{interaction.guild.id}/{file}")
+            file = file.replace("_", '\\_')
+            await interaction.response.send_message(f"{file} à été supprimé",ephemeral=True,delete_after=30)
+            log(interaction.user.name,f"deleted-the-sound-{file}",interaction.guild.name)
         else:
-            fichier = fichier.replace("_", '\\_')
-            await interaction.response.send_message(f"{fichier} est introuvable",ephemeral=True,delete_after=30)
+            file = file.replace("_", '\\_')
+            await interaction.response.send_message(f"{file} est introuvable",ephemeral=True,delete_after=30)
         
 
 

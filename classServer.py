@@ -16,6 +16,8 @@ class Server:
     voiceClient = None
     beginningTime = 0
     YDL_OPTIONS = {'format': 'bestaudio/best', 'noplaylist': 'True'}
+    #Utiliser cette option si l'api youtube vous bloque mais il faut envoyer des cookie pour passer pour ne pas passé pour un bot
+    #YDL_OPTIONS = {'format': 'bestaudio/best', 'noplaylist': 'True', 'cookiesfrombrowser': ('firefox',),}
     ytdl = YoutubeDL(YDL_OPTIONS)
 
 

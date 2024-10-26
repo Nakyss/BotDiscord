@@ -18,7 +18,10 @@ possibilites = {
     "kwoi": ["feur", "chi", "driceps","quoicoubeh"],
     "kwa": ["feur", "chi", "driceps","quoicoubeh"],
     "quipinta":["pine ta mère","pine ta soeur"],
-    "quitom":["tom père"]
+    "quitom":["tom père"],
+    "hein": ["APAGNAN", "APGAGNAAAAAAN, APGAGNAN APAGNAN"],
+    "un": ["APAGNAN", "APGAGNAAAAAAN, APGAGNAN APAGNAN"],
+    "qui": ["kirikou"],
 }
 
 #tableau des messages à envoyé en message pv si on envoie un message au bot
@@ -51,13 +54,25 @@ helpmessage = '''
   - /stat  Envoie un lien vers vos statistiques
   - /delete_last_spam  Supprime les messages du dernier spam envoyé dans le channel
   - /say_to  Envoie le message que vous voulez à la personne que vous voulez anonymement il a possibilité de répondre mais il ne saura pas à qui il parle
+  - /remove_last  Enleve le dernier son ajouter dans le liste de lecture 
 '''
 
 #liste des activité possible 
 someActivity = [
     "Pignouf",
     "Fortnite",
-    "Valorant",
+    "VALORANT",
     "Je me fait chier là",
     "Among Us"
 ]
+
+#liste utilisateurs pouvant utiliser play sans être connecter au vocal
+
+# exemple: 
+
+# secrets = {
+#     "364764543726432234": "mdp"
+# }
+
+secrets = {
+}

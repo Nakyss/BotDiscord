@@ -2,7 +2,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 import os
-
+from functions import log
 
 
 class Add_sound(commands.Cog):
@@ -25,6 +25,7 @@ class Add_sound(commands.Cog):
 
             name = name.replace("_", '\\_')
             await interaction.response.send_message(f"{name} bien enregistré",ephemeral=True,delete_after=30)
+            log(interaction.user.name,f"add-a-newSound-{name}",interaction.guild.name)
         else:
             await interaction.response.send_message("Envoyer seulement des fichier au format .mp3",ephemeral=True,delete_after=30)
 
