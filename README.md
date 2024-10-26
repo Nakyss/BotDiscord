@@ -38,16 +38,9 @@ Nous utilisons une base de donnée MySql
 
 
 ### Installation des librairies python
-Nous utilisont plusieurs librairies installez les avec les commandes suivantes  
+Nous utilisont plusieurs librairies installez les avec la commande suivante  
 ```
-pip install discord.py
-pip install python-dotenv
-pip install pytz
-pip install mutagen
-python -m pip install mysql-connector-python
-pip install yt-dlp
-pip install youtube-search-python
-pip install PyNaCl
+pip install -r requirements.txt
 ````
 
 ### Configuration
