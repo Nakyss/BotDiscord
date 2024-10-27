@@ -71,7 +71,7 @@ class Play(commands.Cog):
 
     @play.error
     async def say_error(self, interaction: discord.Interaction, error):
-        await interaction.response.send_message("Oups, une erreur est arrivé !!!!",ephemeral=True,delete_after=30)
+        await interaction.edit_original_response("Oups, une erreur est arrivé !!!!",ephemeral=True,delete_after=30)
         print(error)
 
 

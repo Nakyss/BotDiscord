@@ -9,8 +9,13 @@ class Join_leave_voice_channel(commands.Cog):
 
     @commands.Cog.listener()
     async def on_voice_state_update(self,member, before, after):
+        #verifie si le membre a quitte le canal
+        if before.channel is not None and after.channel is None and not member.bot:
+            log(member.name,"Left-Voice-Channel",f"{member.guild.name} / {before.channel.name}")
+            db.closeVocalSession(member)
+
         # Vérifie si le membre a rejoint un canal vocal
-        if before.channel is None and after.channel is not None and not member.bot:
+        elif before.channel is None and after.channel is not None and not member.bot:
             server = allServer[member.guild.id]
 
             log(member.name,"Join-Voice-Channel",f"{member.guild.name} / {after.channel.name}")
@@ -38,11 +43,6 @@ class Join_leave_voice_channel(commands.Cog):
                         server.isRandomJoinDisable = True
                         server.lastActualisation = getTime()+10800
                 
-
-        #verifie si le membre a quitte le canal
-        elif before.channel is not None and after.channel is None and not member.bot:
-            log(member.name,"Left-Voice-Channel",f"{member.guild.name} / {before.channel.name}")
-            db.closeVocalSession(member)
 
         # mute
         elif not before.self_mute and after.self_mute:
