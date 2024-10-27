@@ -1,6 +1,7 @@
 import mysql.connector
 from functions import getTime, getTimeV2,openJson,saveJson
 import os 
+import time
 
 class DB:
     db = None
@@ -144,6 +145,7 @@ class DB:
     def newVocalSession(self,member):
         #---add the session to the db
         join = getTime()
+        time.sleep(1)
         try :
             with self.db.cursor() as c:
                 val = (join,member.id,member.guild.id)
