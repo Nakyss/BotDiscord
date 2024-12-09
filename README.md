@@ -13,7 +13,7 @@ Il s'agit d'un bot discord avec plusieurs options.
      - La dernière connexion
      - Le nombres de messages envoyés
      - Le nombres de spam envoyés
-  - Les stats sont accesibles sur le site web http://nakyss.fr/
+  - Les stats sont accesibles sur le site web https://nakyss.fr/
 - **Random Join**:
   - Le bot rejoint un canal vocal à des moment aleatoire si il y'a au moins une personnes connectée.
   - Il joue un son au hasard parmis les son du dossier `\botSound`, puis se deconnecte.
