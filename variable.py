@@ -1,8 +1,7 @@
 
-
-allServer = {}
-
+allServer = {} 
 db = None
+
 
 #possibilité de reponse au message finissant comme suivant:
 possibilites = {
@@ -55,6 +54,10 @@ helpmessage = '''
   - /delete_last_spam  Supprime les messages du dernier spam envoyé dans le channel
   - /say_to  Envoie le message que vous voulez à la personne que vous voulez anonymement il a possibilité de répondre mais il ne saura pas à qui il parle
   - /remove_last  Enleve le dernier son ajouter dans le liste de lecture 
+  - /gt_mute Permet de savoir depuis combien de temps vous étier muet si vous l'êtiez sans vous en rendre compte
+  - /download_sound  Permet de télécharger un son du serveur ou via Youtube, avec un URL ou une simple recherche
+  - /stat Envoie un lien vers vos statistiques
+  - /rewind Genere le rewind de l'année
 '''
 
 #liste des activité possible 
@@ -73,6 +76,3 @@ someActivity = [
 # secrets = {
 #     "364764543726432234": "mdp"
 # }
-
-secrets = {
-}

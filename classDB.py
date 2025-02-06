@@ -221,7 +221,7 @@ class DB:
     def getAllServer(self):
         if self.db != None:
             with self.db.cursor() as c:
-                c.execute(f"SELECT ID_SERVER FROM SERVER")
+                c.execute(f"SELECT ID_SERVER FROM SERVER WHERE STATUS = 1")
                 return c.fetchall()
         else:
             print("***** LA DB N'EST PAS CONNECTE *****\n"*3)

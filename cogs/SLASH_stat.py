@@ -8,7 +8,7 @@ class Stat(commands.Cog):
 
     @app_commands.command(name="stat", description="Accedez à vos statistiques")
     async def stat(self, interaction: discord.Interaction):
-        await interaction.response.send_message(f"Vous pouvez acceder à vos statistiques ici !\nhttps://nakyss.fr/profil?id={interaction.user.id}",ephemeral=True)
+        await interaction.response.send_message(f"Vous pouvez acceder à vos statistiques ici !\nhttps://nakyss.fr/user_stats.php?user={interaction.user.id}&serv={interaction.guild.id}",ephemeral=True)
 
 
     @stat.error

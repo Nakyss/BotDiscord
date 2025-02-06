@@ -40,6 +40,9 @@ class Spam:
     def calculNbMess(self):
         """Calcul le nombre de messages à envoyé ainsi que le nombre de répétitions par message"""
 
+        if (self.nbRep > 2000):
+            return
+
         #Nombre de fois le message à spam par message envoyé
         self.nbRepByMessage = self.nbRep//5
 

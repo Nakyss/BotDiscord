@@ -15,9 +15,8 @@ class Server:
     musicQueue = []
     voiceClient = None
     beginningTime = 0
-    YDL_OPTIONS = {'format': 'bestaudio/best', 'noplaylist': 'True'}
-    #Utiliser cette option si l'api youtube vous bloque mais il faut envoyer des cookie pour passer pour ne pas passé pour un bot
     #YDL_OPTIONS = {'format': 'bestaudio/best', 'noplaylist': 'True', 'cookiesfrombrowser': ('firefox',),}
+    YDL_OPTIONS = {'format': 'bestaudio/best', 'noplaylist': 'True'}
     ytdl = YoutubeDL(YDL_OPTIONS)
 
 
@@ -135,7 +134,11 @@ class Server:
     def getSong(self, son, volume):
         #pour un url recuperer la video
         if son.startswith("https://"):
-            data = self.ytdl.extract_info(son, download=False)
+            try:
+                data = self.ytdl.extract_info(son, download=False)
+            except Exception as e:
+                print(e)
+                return {'source':"https://nakyss.fr/Papillon.m4a", 'title':"Erreur avec Youtube, ecoute Houdi et envoie un message à <@423482629220990985>", 'volume':volume, 'duration': 130}
             song = {'source':data['url'], 'title':data['title'], 'volume':volume, 'duration': data['duration']}
 
         #si c'est pas un url verifie si le son existe dans les fichier du bot
@@ -145,7 +148,48 @@ class Server:
         #si c'est pas dans les fichier du bot alors faire un recherche youtube
         else:
             search = VideosSearch(son, limit=1)
-            data = self.ytdl.extract_info(search.result()["result"][0]["link"], download=False)
+            try:
+                data = self.ytdl.extract_info(search.result()["result"][0]["link"], download=False)
+            except Exception as e:
+                print(e)
+                return {'source':"https://nakyss.fr/Papillon.m4a", 'title':"Erreur avec Youtube, ecoute Houdi et envoie un message à <@423482629220990985>", 'volume':volume, 'duration': 130}
             song = {'source':data['url'], 'title':data['title'], 'volume':volume, 'duration': data['duration']}
 
         return song
+    
+    def download_YT_audio(self, link):
+        with YoutubeDL({'extract_audio': True, 'format': 'bestaudio', 'outtmpl': 'dl_audio/%(title)s.mp3'}) as video:
+            info_dict = video.extract_info(link, download = True)
+
+            folder = os.listdir("dl_audio")
+            file_path = ""
+            for file in folder:
+                if (info_dict['title'][1:5] in file):
+                    file_path = os.path.join("dl_audio",file)
+            
+            return {'source': file_path, 'title':info_dict['title'], 'delete':True} 
+
+    
+    def downloadSong(self, son) -> dict|None:
+        #pour un url recuperer la video
+        if son.startswith("https://"):
+            try:
+                source = self.download_YT_audio(son)
+            except Exception as e:
+                print(e)
+                source = None
+
+        #si c'est pas un url verifie si le son existe dans les fichier du bot
+        elif os.path.exists(f"botSound/{self.id}/{son}.mp3"):
+            source = {'source': f"botSound/{self.id}/{son}.mp3", 'title':son, 'delete':False} 
+        
+        #si c'est pas dans les fichier du bot alors faire un recherche youtube
+        else:
+            search = VideosSearch(son, limit=1)
+            try:
+                source = self.download_YT_audio(search.result()["result"][0]["link"])
+            except Exception as e:
+                print(e)
+                source = None
+
+        return source

@@ -16,6 +16,7 @@ class MessageCog(commands.Cog):
         #--Si c'est un message system----
         if message.is_system():
             return
+        
 
         #--On vérifie que ce n'est pas un bot qui envoie le message---
         if message.author.bot:
@@ -84,7 +85,7 @@ class MessageCog(commands.Cog):
 
                 for i in range(4):
                     await message.channel.send(spam.messageToSpam)
-                await message.channel.send("4 fois c'est deja pas mal")
+                await message.channel.send("4 fois c'est deja pas mal", file=discord.File("sinj.png"))
 
                 db.newSpam(message,4,spam.messageToSpam)  #add to db
                 
