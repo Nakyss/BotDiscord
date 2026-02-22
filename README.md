@@ -1,50 +1,52 @@
 # **Bot2Con**
 
 Il s'agit d'un bot discord avec plusieurs options.
+> [!WARNING]  
+> Le bot fonctionne toujours mais ce repo n'est plus maintenu et si le bot cesse de fonctionner, il ne sera plus mis à jour.
 
 ## Features
 - **Spam**:
   - Envoyer un message sous la forme `spam 12 Hello World!`.
-  - Le bot envera 12 fois `Hello Wordl!`.
-  - Fonctionne tant que le message à envoyer ne depasse pas les 2000 caractères autorisé par Discord.
+  - Le bot enverra 12 fois `Hello World!`.
+  - Fonctionne tant que le message à envoyer ne dépasse pas les 2000 caractères autorisés par Discord.
 - **Stats**:
-  -  Le bot enregistre quelle que infos tel que:
+  -  Le bot enregistre quelques infos telles que:
      - Le temps passé en vocal
      - La dernière connexion
-     - Le nombres de messages envoyés
-     - Le nombres de spam envoyés
-  - Les stats sont accesibles sur le site web https://nakyss.fr/
+     - Le nombre de messages envoyés
+     - Le nombre de spam envoyés
+  - Les stats sont accessibles sur le site web https://nakyss.fr/
 - **Random Join**:
-  - Le bot rejoint un canal vocal à des moment aleatoire si il y'a au moins une personnes connectée.
-  - Il joue un son au hasard parmis les son du dossier `\botSound`, puis se deconnecte.
+  - Le bot rejoint un canal vocal à des moments aléatoires s'il y a au moins une personne connectée.
+  - Il joue un son au hasard parmi les sons du dossier `\botSound`, puis se déconnecte.
 - **Play**:
-  - Commande play pour lire un fichier audio du bot ou une le son du video youtube via un URL ou en tapant directement la recherche.
+  - Commande play pour lire un fichier audio du bot ou le son de la vidéo youtube via un URL ou en tapant directement la recherche.
 - **Say To**
   - Commande qui permet d'envoyer un message anonyme à quelqu'un via le bot, il a la possibilité de répondre mais ne sait pas a qui il parle.
 
 ## Language
 - Python `bot`
 - HTML, CSS, JS, PHP `Site Web`
-- SQL `base de donnée`
+- SQL `base de données`
 
 ## Installer le Bot
 
-### Creation Base de données :
-Nous utilisons une base de donnée MySql   
+### Création Base de données :
+Nous utilisons une base de données MySql   
 
- - Crée une base de données avec un nom au choix
- - Exécutée le fichier `bd/bot_discord.sql` ou son contenue dans votre base de données
+ - Créez une base de données avec un nom au choix
+ - Exécutez le fichier `bd/bot_discord.sql` ou son contenu dans votre base de données
 
 
 
 ### Installation des librairies python
-Nous utilisont plusieurs librairies installez les avec la commande suivante  
+Nous utilisons plusieurs librairies, installez-les avec la commande suivante  
 ```
 pip install -r requirements.txt
 ````
 
 ### Configuration
-Ouvrez le fichier `.env` et remplisser les variables avec les donnée pour votre bot
+Ouvrez le fichier `.env` et remplissez les variables avec les données pour votre bot
 
 ```
 DISCORD_BOT_TOKEN=your_token
